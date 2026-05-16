@@ -7,6 +7,18 @@
   overflow: hidden;
 }
 
+/* ===== Wallpaper ===== */
+.desktop-wallpaper {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 0;
+  transition: opacity 0.5s ease;
+}
+
 .desktop-area {
   flex-grow: 1;
   position: relative;
@@ -20,8 +32,6 @@
 }
 
 .desktop-icon {
-  width: 80px;
-  height: 90px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -39,11 +49,18 @@
   backdrop-filter: blur(4px);
 }
 
+body.dark-theme .desktop-icon:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .desktop-icon span {
-  font-size: 13px;
   font-weight: 500;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
   text-align: center;
+  line-height: 1.2;
+}
+
+body.dark-theme .desktop-icon span {
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
 
 /* Taskbar styling */
@@ -83,6 +100,16 @@
 .taskbar-icon:hover {
   background: var(--taskbar-hover);
   transform: translateY(-2px);
+}
+
+.taskbar-icon.opened::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  width: 6px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
 }
 
 .taskbar-icon.active::after {

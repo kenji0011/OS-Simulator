@@ -265,12 +265,27 @@ export const OSProvider = ({ children }) => {
     }
   };
 
-  // --- 4. I/O SIMULATION ---
-  const addToPrinterQueue = (document) => {
-    setIoQueue(prev => [...prev, document]);
-    addLog(`I/O Request: Added "${document}" to printer queue.`);
+  // --- 4. I/O / PRINT SIMULATION ---
+  // Enhanced printer queue with rich document objects
+  const [printerQueue, setPrinterQueue] = useState([]);
+  const [printHistory, setPrintHistory] = useState([]);
+  const [autoPrint, setAutoPrint] = useState(true);
+
+  const addToPrinterQueue = (documentName) => {
+    const doc = {
+      id: `print_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      name: documentName,
+      status: 'queued', // queued | printing | done
+      progress: 0,
+      pages: Math.floor(Math.random() * 8) + 1,
+      addedAt: new Date().toLocaleTimeString(),
+    };
+    setPrinterQueue(prev => [...prev, doc]);
+    // Legacy ioQueue compat
+    setIoQueue(prev => [...prev, documentName]);
+    addLog(`I/O Request: Added "${documentName}" to printer queue.`);
   };
-  
+
   const processNextIo = () => {
     if (ioQueue.length > 0) {
       const doc = ioQueue[0];
@@ -279,13 +294,38 @@ export const OSProvider = ({ children }) => {
     }
   };
 
+  const updatePrintJob = (id, updates) => {
+    setPrinterQueue(prev => prev.map(d => d.id === id ? { ...d, ...updates } : d));
+  };
+
+  const completePrintJob = (id) => {
+    setPrinterQueue(prev => {
+      const job = prev.find(d => d.id === id);
+      if (job) {
+        setPrintHistory(h => [{ ...job, status: 'done', progress: 100, completedAt: new Date().toLocaleTimeString() }, ...h]);
+      }
+      return prev.filter(d => d.id !== id);
+    });
+  };
+
+  const clearPrinterQueue = () => {
+    setPrinterQueue([]);
+    setIoQueue([]);
+  };
+
+  const clearPrintHistory = () => {
+    setPrintHistory([]);
+  };
+
   return (
     <OSContext.Provider value={{
       files, fileSystem, getFolder, createFile, createFolder, updateFile, deleteFile, deleteItem, renameItem, moveItem, copyItem, pasteItem, clipboard,
       activeNotepadFile, setNotepadFile, systemAction, dispatchSystemAction,
-      memoryBlocks,
+      memoryBlocks, setMemoryBlocks,
       processes, addProcess, runSchedulerFCFS, ganttChart, logs,
-      ioQueue, addToPrinterQueue, processNextIo
+      ioQueue, addToPrinterQueue, processNextIo,
+      printerQueue, setPrinterQueue, printHistory, autoPrint, setAutoPrint,
+      updatePrintJob, completePrintJob, clearPrinterQueue, clearPrintHistory
     }}>
       {children}
     </OSContext.Provider>

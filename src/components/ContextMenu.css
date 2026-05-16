@@ -1,0 +1,289 @@
+/* ===== Context Menu ===== */
+.ctx-menu-backdrop {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  z-index: 9999;
+}
+
+.ctx-menu {
+  position: fixed;
+  min-width: 240px;
+  padding: 6px 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.82) !important;
+  backdrop-filter: blur(24px) saturate(1.6) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.55) !important;
+  box-shadow:
+    0 12px 48px rgba(0, 0, 0, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  animation: ctxFadeIn 0.15s ease-out;
+  z-index: 10000;
+}
+
+.ctx-menu.ctx-dark {
+  background: rgba(32, 32, 40, 0.88) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow:
+    0 12px 48px rgba(0, 0, 0, 0.5),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+@keyframes ctxFadeIn {
+  from { opacity: 0; transform: scale(0.96) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ----- Items ----- */
+.ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: calc(100% - 8px);
+  margin: 0 4px;
+  padding: 7px 14px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-dark);
+  font-family: var(--font-family);
+  font-size: 13px;
+  font-weight: 450;
+  cursor: pointer;
+  position: relative;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+
+.ctx-item:hover,
+.ctx-item.ctx-sub-open {
+  background: var(--ctx-hover, rgba(0, 0, 0, 0.06));
+}
+
+.ctx-dark .ctx-item {
+  color: rgba(255, 255, 255, 0.9);
+}
+.ctx-dark .ctx-item:hover,
+.ctx-dark .ctx-item.ctx-sub-open {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.ctx-shortcut {
+  margin-left: auto;
+  font-size: 11px;
+  opacity: 0.45;
+  font-weight: 400;
+}
+
+.ctx-chevron {
+  margin-left: auto;
+  opacity: 0.5;
+}
+
+.ctx-check {
+  flex-shrink: 0;
+  color: var(--accent-purple);
+}
+
+.ctx-separator {
+  height: 1px;
+  margin: 4px 12px;
+  background: rgba(0, 0, 0, 0.08);
+}
+.ctx-dark .ctx-separator {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ----- Submenu (generic) ----- */
+.ctx-submenu {
+  position: absolute;
+  left: calc(100% + 4px);
+  bottom: -6px;
+  min-width: 180px;
+  padding: 6px 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.82) !important;
+  backdrop-filter: blur(24px) saturate(1.6) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.55) !important;
+  box-shadow:
+    0 12px 48px rgba(0, 0, 0, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  animation: ctxFadeIn 0.12s ease-out;
+  z-index: 10001;
+}
+.ctx-submenu.ctx-dark {
+  background: rgba(32, 32, 40, 0.88) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* ----- Wallpaper Grid ----- */
+.ctx-wallpaper-grid {
+  width: 340px;
+  padding: 10px !important;
+}
+
+.ctx-wp-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.5;
+  padding: 4px 8px 6px;
+  color: var(--text-dark);
+}
+.ctx-dark .ctx-wp-label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.ctx-wp-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.ctx-wp-thumb {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.2s, transform 0.15s;
+  font-family: var(--font-family);
+}
+
+.ctx-wp-thumb img {
+  width: 90px;
+  height: 56px;
+  border-radius: 6px;
+  object-fit: cover;
+  transition: transform 0.15s;
+}
+
+.ctx-wp-thumb span {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-dark);
+  opacity: 0.7;
+}
+.ctx-dark .ctx-wp-thumb span {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.ctx-wp-thumb:hover {
+  border-color: var(--accent-purple);
+  transform: translateY(-1px);
+}
+.ctx-wp-thumb:hover img {
+  transform: scale(1.03);
+}
+
+.ctx-wp-active {
+  border-color: var(--accent-purple) !important;
+}
+
+.ctx-wp-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 22px; height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--accent-purple);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.ctx-wp-default-preview {
+  width: 90px;
+  height: 56px;
+  border-radius: 6px;
+  background: radial-gradient(circle at 15% 15%, #fce7f3 0%, transparent 50%),
+              radial-gradient(circle at 85% 85%, #ede9fe 0%, transparent 50%),
+              linear-gradient(135deg, #f8fafc 0%, #f3e8ff 100%);
+}
+
+/* ----- Theme Panel ----- */
+.ctx-theme-panel {
+  width: 260px;
+  padding: 10px !important;
+}
+
+.ctx-theme-modes {
+  display: flex;
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.ctx-mode-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  font-family: var(--font-family);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dark);
+  transition: all 0.2s;
+}
+.ctx-dark .ctx-mode-btn {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.9);
+}
+.ctx-mode-btn:hover {
+  border-color: var(--accent-purple);
+  background: rgba(196, 113, 237, 0.08);
+}
+.ctx-mode-active {
+  border-color: var(--accent-purple) !important;
+  background: rgba(196, 113, 237, 0.12) !important;
+}
+
+/* ----- Color Swatches ----- */
+.ctx-color-grid {
+  display: flex;
+  gap: 8px;
+  padding: 2px 4px;
+  flex-wrap: wrap;
+}
+
+.ctx-color-swatch {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+.ctx-color-swatch:hover {
+  transform: scale(1.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+.ctx-color-active {
+  border-color: #fff !important;
+  box-shadow: 0 0 0 2px var(--accent-purple), 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+  transform: scale(1.1);
+}

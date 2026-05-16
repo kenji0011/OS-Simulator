@@ -1,16 +1,76 @@
-# React + Vite
+# OS-Sim — Operating System Simulator
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A web-based OS simulator built with **React** and **Vite** that demonstrates core operating system concepts through an interactive desktop environment inspired by Windows 11.
 
-Currently, two official plugins are available:
+## Quick Start
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+Open `http://localhost:5173` in your browser.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## What It Does
 
-## Expanding the ESLint configuration
+OS-Sim lets you explore how an operating system works through hands-on apps:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+| App | OS Concept | What You Can Do |
+|-----|-----------|-----------------|
+| **CPU Scheduling** | Process Scheduling | Run FCFS, SJF, SRTF, Round Robin, and Priority algorithms with live Gantt charts |
+| **Memory Manager** | Memory Allocation | Allocate/deallocate memory blocks using First Fit, Best Fit, or Worst Fit |
+| **File Manager** | File Systems | Browse, create, rename, copy, and delete files and folders |
+| **Print Spooler** | I/O Management | Queue print jobs with live preview and printing animation |
+| **Task Manager** | Resource Monitoring | Watch real-time CPU, memory, and disk usage charts |
+| **Notepad** | File I/O | Edit and save files, send them to the printer |
+| **Browser** | — | Tabbed browsing with simulated websites |
+| **Calculator** | — | Standard and scientific calculator |
+| **VALORANT** | — | Game launcher UI demo |
+
+## Desktop Features
+
+- **Windowing** — Drag, resize, minimize, and maximize app windows
+- **Taskbar** — Pinned apps, running indicators, system clock
+- **Themes** — Light/Dark mode with 6 color schemes
+- **Wallpapers** — 5 backgrounds + default gradient
+- **Context Menu** — Right-click for refresh, new files, icon sizes, themes, and wallpapers
+
+## Project Structure
+
+```
+src/
+├── main.jsx                  # Entry point
+├── App.jsx                   # Desktop shell (icons, taskbar, windows)
+├── context/
+│   └── OSContext.jsx         # Shared state (file system, processes, I/O)
+├── components/
+│   ├── Window.jsx            # Draggable/resizable window
+│   └── ContextMenu.jsx       # Right-click menu
+└── apps/
+    ├── TaskManager.jsx        # CPU scheduling visualizer
+    ├── useSimulationEngine.js # Scheduling algorithm engine
+    ├── MemoryManager.jsx      # Memory allocation visualizer
+    ├── useMemoryEngine.js     # Memory algorithm engine
+    ├── FileManager.jsx        # File explorer
+    ├── PrinterSimulator.jsx   # Print spooler
+    ├── PerformanceMonitor.jsx # System performance charts
+    ├── Notepad.jsx            # Text editor
+    ├── Browser.jsx            # Tabbed browser
+    ├── Calculator.jsx         # Calculator
+    └── Valorant.jsx           # Game launcher UI
+```
+
+## Tech Stack
+
+- **React 19** — UI framework
+- **Vite** — Build tool
+- **react-rnd** — Draggable/resizable windows
+- **lucide-react** — Icons
+- **Google Fonts (Inter)** — Typography
+
+## Build for Production
+
+```bash
+npm run build     # Output to dist/
+npm run preview   # Preview the build
+```

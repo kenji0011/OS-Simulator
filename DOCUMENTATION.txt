@@ -1,0 +1,159 @@
+COMPUTER SCIENCE
+BACHELOR OF SCIENCE IN COMPUTER SCIENCE
+
+
+CSEL - 303 COMPUTATIONAL SCIENCE
+
+
+
+
+
+OS-SIM: OPERATING SYSTEM SIMULATOR
+
+
+
+
+SUBMITTED BY:
+HORNILLA, JOHN BENEDICT M.
+LACHANO, AERON JHED V.
+LUZANDE, JUSTIN ANGELO A.
+SALVAHAN, KEAN GABRIEL E.
+UMALI, PRINCE GENEL R.
+
+
+
+DATE SUBMITTED:
+MAY __ 2026
+
+
+
+
+
+SUBMITTED TO:
+ROXANNE GARBO
+
+
+Abstract
+
+OS-Sim is a web-based Operating System Simulator built with React and Vite that replicates the look and functionality of a Windows 11 desktop environment. It allows users to interact with core OS concepts including CPU scheduling, memory management, file systems, and I/O management through visual, hands-on applications. The simulator runs entirely in the browser and requires no backend server.
+
+
+1	Introduction
+
+Operating System concepts such as CPU scheduling, memory allocation, and I/O management are often taught through static diagrams and textbook descriptions. While these provide theoretical foundations, they do not allow students to observe how these algorithms behave in real time.
+
+OS-Sim was developed for CSEL 303 - Computational Science to address this gap. It provides an interactive desktop environment where users can run scheduling algorithms, allocate memory, manage files, and queue print jobs — all within a simulated OS interface.
+
+
+2	System Architecture
+
+The application follows a component-based architecture with three layers:
+
+	-	Presentation Layer (App.jsx): Renders the desktop shell — icons, taskbar, windows, context menu, and theme engine.
+	-	State Management Layer (OSContext.jsx): Manages shared data across all apps — file system, processes, memory blocks, and printer queue — using React Context.
+	-	Simulation Engines (useSimulationEngine.js, useMemoryEngine.js): Custom hooks that contain the core algorithms for CPU scheduling and memory allocation.
+
+2.1	Tech Stack
+
+	-	React 19 (UI Framework)
+	-	Vite (Build Tool)
+	-	react-rnd (Draggable/Resizable Windows)
+	-	lucide-react (Icons)
+	-	Google Fonts - Inter (Typography)
+	-	JavaScript ES Modules
+
+
+3	OS Concepts Demonstrated
+
+3.1	CPU Scheduling
+
+The CPU Scheduling module lets users create processes and run them through five scheduling algorithms:
+
+	-	FCFS (First-Come, First-Served): Processes run in the order they arrive.
+	-	SJF (Shortest Job First): The process with the shortest burst time runs first.
+	-	SRTF (Shortest Remaining Time First): A running process is preempted if a shorter one arrives.
+	-	Round Robin: Each process runs for a fixed time slice, then goes to the back of the queue.
+	-	Priority Scheduling: The process with the highest priority (lowest number) runs first.
+
+The simulation displays a live Gantt chart, a ready queue visualization, and computes Average Waiting Time and Average Turnaround Time after all processes complete.
+
+3.2	Memory Management
+
+The Memory Manager simulates how an OS allocates contiguous memory blocks to processes. Total memory is 1024 KB with 64 KB reserved for the OS.
+
+Three allocation algorithms are supported:
+
+	-	First Fit: Allocates the first block that is large enough.
+	-	Best Fit: Allocates the smallest block that fits.
+	-	Worst Fit: Allocates the largest available block.
+
+The module includes a visual memory map, external fragmentation calculation, compaction (consolidating free space), and automatic merging of adjacent free blocks upon deallocation.
+
+3.3	File System
+
+The File Manager provides a hierarchical file system rooted at C: with default folders (Desktop, Documents, Downloads, Pictures, Music). Users can create, rename, delete, copy, and paste files and folders. The file system uses a tree data structure with recursive traversal for navigation.
+
+3.4	I/O Management (Print Spooler)
+
+The Print Spooler simulates how an OS manages print jobs using a FIFO queue. Users can queue documents, configure print settings (paper size, orientation, color mode), and watch jobs progress through stages: Queued, Feeding, Printing, Ejecting, and Done.
+
+
+4	Application Modules
+
+	-	CPU Scheduling (TaskManager.jsx): Editable process table, live Gantt chart, ready queue display, play/pause/reset controls.
+	-	Memory Manager (MemoryManager.jsx): Visual memory map, usage bar, allocation log, auto-simulation and manual allocation modes.
+	-	File Manager (FileManager.jsx): Grid and list views, breadcrumb navigation, search, quick access sidebar, right-click context menu.
+	-	Print Spooler (PrinterSimulator.jsx): Live paper preview, print animation, job history, configurable settings.
+	-	Performance Monitor (PerformanceMonitor.jsx): Real-time CPU, memory, disk, and network usage charts with simulated hardware specs.
+	-	Notepad (Notepad.jsx): Text editor that can open, edit, save files and send them to the printer.
+	-	Browser (Browser.jsx): Tabbed browser with simulated Google, Wikipedia, GitHub, and YouTube pages.
+	-	Calculator (Calculator.jsx): Standard and scientific calculator.
+	-	VALORANT (Valorant.jsx): Game launcher UI demo.
+
+
+5	Desktop Features
+
+	-	Window Management: Drag, resize, minimize, maximize, and close application windows.
+	-	Taskbar: Pinned apps, running indicators, and system clock.
+	-	Themes: Light/Dark mode with 6 color schemes (Rose, Purple, Blue, Teal, Amber, Emerald).
+	-	Wallpapers: 5 background options plus a default gradient.
+	-	Context Menu: Right-click for refresh, icon size, new file/folder, wallpaper, and theme settings.
+
+
+6	How to Run
+
+	1.	Install Node.js (version 18 or higher).
+	2.	Open a terminal in the project directory.
+	3.	Run "npm install" to install dependencies.
+	4.	Run "npm run dev" to start the development server.
+	5.	Open http://localhost:5173 in a browser.
+
+
+7	Conclusion
+
+OS-Sim provides students with a hands-on way to explore operating system concepts through an interactive desktop simulator. By combining CPU scheduling, memory management, file system operations, and I/O spooling into a single web application, it makes abstract algorithms visible and tangible.
+
+
+8	Sample Output Screenshots
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+8.1	Source Code Screenshots
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
