@@ -70,6 +70,10 @@ const Window = ({ app, onClose, isActive, bringToFront, children }) => {
       bounds=".desktop-area"
       dragHandleClassName="window-titlebar"
       onMouseDown={bringToFront}
+      onContextMenu={(e) => {
+        e.stopPropagation();
+        bringToFront();
+      }}
       style={{
         zIndex: isActive ? 1000 : 100,
         display: 'flex',

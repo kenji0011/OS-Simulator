@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Printer, RotateCcw, Check, Minus, Plus, CheckCircle } from 'lucide-react';
 import { useOS } from '../context/OSContext';
 
@@ -12,7 +12,8 @@ const PAPER_SIZES = {
 const PrinterSimulator = () => {
   const {
     files, printerQueue, addToPrinterQueue, completePrintJob,
-    printHistory, clearPrintHistory
+    printHistory, clearPrintHistory, activeNotepadFile, lastSavedFileId,
+    printerTargetFileId, setPrinterTargetFileId, lastQueuedFileId, lastQueuedJobId
   } = useOS();
 
   const [selectedFileId, setSelectedFileId] = useState('');
@@ -25,10 +26,27 @@ const PrinterSimulator = () => {
   const [printProgress, setPrintProgress] = useState(0);
   const [printPhase, setPrintPhase] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
+  const lastPreferredFileId = useRef(null);
 
   useEffect(() => {
-    if (!selectedFileId && files.length > 0) setSelectedFileId(files[0].id);
-  }, [files, selectedFileId]);
+    const printerTargetFile = files.find(f => f.id === printerTargetFileId);
+    if (printerTargetFile && selectedFileId !== printerTargetFile.id) {
+      setSelectedFileId(printerTargetFile.id);
+      return;
+    }
+
+    const preferredFileId = printerTargetFileId || lastQueuedFileId || activeNotepadFile || lastSavedFileId;
+    const preferredMarker = lastQueuedJobId || preferredFileId;
+    const preferredFile = files.find(f => f.id === preferredFileId);
+    const selectedFileExists = files.some(f => f.id === selectedFileId);
+
+    if (preferredFile && preferredMarker !== lastPreferredFileId.current) {
+      setSelectedFileId(preferredFile.id);
+      lastPreferredFileId.current = preferredMarker;
+    } else if ((!selectedFileId || !selectedFileExists) && files.length > 0) {
+      setSelectedFileId(files[0].id);
+    }
+  }, [activeNotepadFile, files, lastQueuedFileId, lastQueuedJobId, lastSavedFileId, printerTargetFileId, selectedFileId]);
 
   const selectedFile = files.find(f => f.id === selectedFileId);
   const fileContent = selectedFile?.content || '';
@@ -44,7 +62,11 @@ const PrinterSimulator = () => {
     setPrintProgress(0);
     setPrintPhase('feeding');
     setShowSuccess(false);
-    addToPrinterQueue(fileName);
+    const queuedJob = addToPrinterQueue({
+      fileId: selectedFile.id,
+      name: fileName,
+      content: fileContent,
+    });
 
     let progress = 0;
     const interval = setInterval(() => {
@@ -58,8 +80,7 @@ const PrinterSimulator = () => {
         setPrintPhase('done');
         setIsPrinting(false);
         setShowSuccess(true);
-        const job = printerQueue.find(j => j.status === 'queued' || j.status === 'printing');
-        if (job) completePrintJob(job.id);
+        completePrintJob(queuedJob.id);
         setTimeout(() => setShowSuccess(false), 3000);
       }
     }, 80);
@@ -88,7 +109,10 @@ const PrinterSimulator = () => {
             <Label>Select File</Label>
             <select
               value={selectedFileId}
-              onChange={e => setSelectedFileId(e.target.value)}
+              onChange={e => {
+                setSelectedFileId(e.target.value);
+                setPrinterTargetFileId(null);
+              }}
               style={selectStyle}
             >
               <option value="">-- Select File --</option>
@@ -168,6 +192,21 @@ const PrinterSimulator = () => {
               <><Printer size={16} /> Print Document</>
             )}
           </button>
+
+          {/* Queued Jobs */}
+          <Section title={`Queue (${printerQueue.length})`}>
+            {printerQueue.length === 0 ? (
+              <div style={{ fontSize: '12px', color: '#666', padding: '4px 0' }}>No documents waiting.</div>
+            ) : (
+              printerQueue.map(doc => (
+                <div key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <Printer size={13} color="#a78bfa" />
+                  <span style={{ flex: 1, color: '#ddd', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.name}</span>
+                  <span style={{ color: '#666', flexShrink: 0 }}>{doc.addedAt}</span>
+                </div>
+              ))
+            )}
+          </Section>
 
           {/* Recent Prints */}
           {printHistory.length > 0 && (

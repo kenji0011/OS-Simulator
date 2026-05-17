@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import './App.css';
-import { Settings, FileText, FolderClosed, Calculator as CalculatorIcon, Globe, Activity, Crosshair, Monitor, Printer, MemoryStick } from 'lucide-react';
+import { Settings, FileText, FolderClosed, Calculator as CalculatorIcon, Globe, Activity, Crosshair, Monitor, Printer, MemoryStick, File as FileIcon } from 'lucide-react';
 import Window from './components/Window';
 import ContextMenu, { WALLPAPERS, COLOR_SCHEMES, ICON_SIZES } from './components/ContextMenu';
 
@@ -96,7 +96,10 @@ const LIGHT_THEME_VARS = {
 };
 
 function App() {
-  const { systemAction, dispatchSystemAction, createFile, createFolder } = useOS();
+  const {
+    systemAction, dispatchSystemAction, createFile, createFolder,
+    getFolder, setNotepadFile, setFileManagerTargetFolderId
+  } = useOS();
   const [openApps, setOpenApps] = useState([]);
   const [activeApp, setActiveApp] = useState(null);
 
@@ -133,6 +136,7 @@ function App() {
     const wp = WALLPAPERS.find(w => w.id === wallpaper);
     return wp?.thumbnail || null;
   }, [wallpaper]);
+  const desktopItems = getFolder('desktop')?.children || [];
 
   React.useEffect(() => {
     if (systemAction?.action === 'OPEN_APP') {
@@ -244,11 +248,23 @@ function App() {
     }
   }, []);
 
+  const openDesktopItem = useCallback((item) => {
+    if (dragRef.current.moved) return;
+
+    if (item.type === 'file') {
+      setNotepadFile(item.id);
+      dispatchSystemAction({ action: 'OPEN_APP', appId: 'notepad' });
+    } else {
+      setFileManagerTargetFolderId(item.id);
+      dispatchSystemAction({ action: 'OPEN_APP', appId: 'filemanager' });
+    }
+  }, [dispatchSystemAction, setFileManagerTargetFolderId, setNotepadFile]);
+
   // ===== Right-Click Context Menu =====
   const handleContextMenu = useCallback((e) => {
     e.preventDefault();
     // Only show when clicking the desktop area, not on icons or windows
-    if (e.target.closest('.desktop-icon') || e.target.closest('.window-frame') || e.target.closest('.taskbar')) return;
+    if (e.target.closest('.desktop-icon') || e.target.closest('.window-container') || e.target.closest('.taskbar')) return;
     setContextMenu({ x: e.clientX, y: e.clientY });
   }, []);
 
@@ -341,6 +357,35 @@ function App() {
             <span style={{ fontSize: iconCfg.labelPx }}>{app.name}</span>
           </div>
         ))}
+
+        {desktopItems.map((item, i) => {
+          const rowOffset = APPS.length + i;
+          const rows = Math.max(1, Math.floor((window.innerHeight - 80) / GRID_H));
+          const col = Math.floor(rowOffset / rows);
+          const row = rowOffset % rows;
+          const left = GRID_PAD + col * GRID_W;
+          const top = GRID_PAD + row * GRID_H;
+          const Icon = item.type === 'folder' ? FolderClosed : FileIcon;
+          const color = item.type === 'folder' ? '#eab308' : '#3b82f6';
+
+          return (
+            <div
+              key={item.id}
+              className="desktop-icon"
+              style={{
+                position: 'absolute',
+                left,
+                top,
+                width: iconCfg.boxW,
+                height: iconCfg.boxH,
+              }}
+              onDoubleClick={() => openDesktopItem(item)}
+            >
+              <Icon size={iconCfg.iconPx} color={color} strokeWidth={1.5} />
+              <span style={{ fontSize: iconCfg.labelPx }}>{item.name}</span>
+            </div>
+          );
+        })}
         
         {/* Render open windows */}
         {openApps.map(appId => {

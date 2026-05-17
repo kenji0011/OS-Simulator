@@ -3,7 +3,10 @@ import { useOS } from '../context/OSContext';
 import { Save, Printer } from 'lucide-react';
 
 const Notepad = () => {
-  const { files, updateFile, addToPrinterQueue, activeNotepadFile, setNotepadFile } = useOS();
+  const {
+    files, updateFile, addToPrinterQueue,
+    activeNotepadFile, setNotepadFile, dispatchSystemAction, setPrinterTargetFileId
+  } = useOS();
   const [text, setText] = useState('');
 
   // Sync state when active file changes
@@ -29,7 +32,14 @@ const Notepad = () => {
   const handlePrint = () => {
     const file = files.find(f => f.id === activeNotepadFile);
     if (file) {
-      addToPrinterQueue(file.name);
+      updateFile(activeNotepadFile, text);
+      setPrinterTargetFileId(activeNotepadFile);
+      addToPrinterQueue({
+        fileId: activeNotepadFile,
+        name: file.name,
+        content: text,
+      });
+      dispatchSystemAction({ action: 'OPEN_APP', appId: 'printer' });
     }
   };
 

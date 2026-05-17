@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useOS } from '../context/OSContext';
 import { 
   Folder, FolderOpen, FolderTree, FileText, File as FileIcon, Image as ImageIcon, 
@@ -27,7 +27,8 @@ const FileManager = () => {
   const { 
     fileSystem, getFolder, createFile, createFolder, deleteItem, 
     renameItem, copyItem, pasteItem, clipboard,
-    setNotepadFile, dispatchSystemAction
+    setNotepadFile, dispatchSystemAction,
+    fileManagerTargetFolderId, setFileManagerTargetFolderId
   } = useOS();
 
   const [history, setHistory] = useState(['root']); // stack of folder IDs
@@ -42,6 +43,20 @@ const FileManager = () => {
   const [contextMenu, setContextMenu] = useState(null);
   const [renamingId, setRenamingId] = useState(null);
   const [editName, setEditName] = useState('');
+
+  useEffect(() => {
+    if (!fileManagerTargetFolderId) return;
+
+    const targetFolder = getFolder(fileManagerTargetFolderId);
+    if (targetFolder) {
+      setHistory([fileManagerTargetFolderId]);
+      setHistoryIndex(0);
+      setSelectedIds(new Set());
+      setSearchQuery('');
+    }
+
+    setFileManagerTargetFolderId(null);
+  }, [fileManagerTargetFolderId, getFolder, setFileManagerTargetFolderId]);
   
   // Navigation
   const navigateTo = (folderId) => {
@@ -123,6 +138,11 @@ const FileManager = () => {
     e.preventDefault();
     setSelectedIds(new Set());
     setContextMenu({ x: e.clientX, y: e.clientY, targetId: null });
+  };
+
+  const handleBgClick = () => {
+    setSelectedIds(new Set());
+    closeContextMenu();
   };
 
   const closeContextMenu = () => setContextMenu(null);
@@ -253,7 +273,7 @@ const FileManager = () => {
         </div>
 
         {/* File View */}
-        <div style={{ flex: 1, background: '#ffffff', padding: '16px', overflowY: 'auto' }} onClick={handleBgContextMenu} onContextMenu={handleBgContextMenu}>
+        <div style={{ flex: 1, background: '#ffffff', padding: '16px', overflowY: 'auto' }} onClick={handleBgClick} onContextMenu={handleBgContextMenu}>
           
           {displayedItems.length === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9ca3af' }}>

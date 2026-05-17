@@ -66,11 +66,35 @@ export const OSProvider = ({ children }) => {
   };
   const files = getAllFiles(fileSystem);
 
+  const makeUniqueName = (children, name) => {
+    const usedNames = new Set(children.map(child => child.name));
+    if (!usedNames.has(name)) return name;
+
+    const dotIndex = name.lastIndexOf('.');
+    const base = dotIndex > 0 ? name.slice(0, dotIndex) : name;
+    const ext = dotIndex > 0 ? name.slice(dotIndex) : '';
+    let copyNumber = 2;
+    let nextName = `${base} (${copyNumber})${ext}`;
+
+    while (usedNames.has(nextName)) {
+      copyNumber += 1;
+      nextName = `${base} (${copyNumber})${ext}`;
+    }
+
+    return nextName;
+  };
+
   const createFile = (parentId, name, content = 'New file content...') => {
     const fs = cloneFS(fileSystem);
     const parent = findNode(fs, parentId);
     if (parent && parent.type === 'folder') {
-      parent.children.push({ id: `f_${Date.now()}`, name, type: 'file', content, size: content.length });
+      parent.children.push({
+        id: `f_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        name: makeUniqueName(parent.children, name),
+        type: 'file',
+        content,
+        size: content.length,
+      });
       setFileSystem(fs);
     }
   };
@@ -79,7 +103,12 @@ export const OSProvider = ({ children }) => {
     const fs = cloneFS(fileSystem);
     const parent = findNode(fs, parentId);
     if (parent && parent.type === 'folder') {
-      parent.children.push({ id: `d_${Date.now()}`, name, type: 'folder', children: [] });
+      parent.children.push({
+        id: `d_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        name: makeUniqueName(parent.children, name),
+        type: 'folder',
+        children: [],
+      });
       setFileSystem(fs);
     }
   };
@@ -102,16 +131,6 @@ export const OSProvider = ({ children }) => {
     }
   };
 
-  const updateFile = (id, newContent) => {
-    const fs = cloneFS(fileSystem);
-    const node = findNode(fs, id);
-    if (node && node.type === 'file') {
-      node.content = newContent;
-      node.size = newContent.length;
-      setFileSystem(fs);
-    }
-  };
-
   const moveItem = (id, newParentId) => {
     const fs = cloneFS(fileSystem);
     const parent = findParent(fs, id);
@@ -129,8 +148,21 @@ export const OSProvider = ({ children }) => {
   
   // App linking state
   const [activeNotepadFile, setNotepadFile] = useState(null);
+  const [lastSavedFileId, setLastSavedFileId] = useState(null);
+  const [fileManagerTargetFolderId, setFileManagerTargetFolderId] = useState(null);
   const [systemAction, setSystemAction] = useState(null);
   const dispatchSystemAction = (action) => setSystemAction(action);
+
+  const updateFile = (id, newContent) => {
+    const fs = cloneFS(fileSystem);
+    const node = findNode(fs, id);
+    if (node && node.type === 'file') {
+      node.content = newContent;
+      node.size = newContent.length;
+      setFileSystem(fs);
+      setLastSavedFileId(id);
+    }
+  };
 
   const copyItem = (id) => {
     const node = findNode(fileSystem, id);
@@ -269,21 +301,32 @@ export const OSProvider = ({ children }) => {
   // Enhanced printer queue with rich document objects
   const [printerQueue, setPrinterQueue] = useState([]);
   const [printHistory, setPrintHistory] = useState([]);
+  const [printerTargetFileId, setPrinterTargetFileId] = useState(null);
+  const [lastQueuedFileId, setLastQueuedFileId] = useState(null);
+  const [lastQueuedJobId, setLastQueuedJobId] = useState(null);
   const [autoPrint, setAutoPrint] = useState(true);
 
-  const addToPrinterQueue = (documentName) => {
+  const addToPrinterQueue = (document) => {
+    const documentName = typeof document === 'string' ? document : document.name;
+    const content = typeof document === 'string' ? '' : document.content || '';
+    const fileId = typeof document === 'string' ? null : document.fileId || null;
     const doc = {
       id: `print_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      fileId,
       name: documentName,
+      content,
       status: 'queued', // queued | printing | done
       progress: 0,
-      pages: Math.floor(Math.random() * 8) + 1,
+      pages: Math.max(1, Math.ceil(content.split('\n').length / 40)),
       addedAt: new Date().toLocaleTimeString(),
     };
     setPrinterQueue(prev => [...prev, doc]);
+    if (fileId) setLastQueuedFileId(fileId);
+    setLastQueuedJobId(doc.id);
     // Legacy ioQueue compat
     setIoQueue(prev => [...prev, documentName]);
     addLog(`I/O Request: Added "${documentName}" to printer queue.`);
+    return doc;
   };
 
   const processNextIo = () => {
@@ -320,11 +363,14 @@ export const OSProvider = ({ children }) => {
   return (
     <OSContext.Provider value={{
       files, fileSystem, getFolder, createFile, createFolder, updateFile, deleteFile, deleteItem, renameItem, moveItem, copyItem, pasteItem, clipboard,
-      activeNotepadFile, setNotepadFile, systemAction, dispatchSystemAction,
+      activeNotepadFile, setNotepadFile, lastSavedFileId,
+      fileManagerTargetFolderId, setFileManagerTargetFolderId,
+      systemAction, dispatchSystemAction,
       memoryBlocks, setMemoryBlocks,
       processes, addProcess, runSchedulerFCFS, ganttChart, logs,
       ioQueue, addToPrinterQueue, processNextIo,
-      printerQueue, setPrinterQueue, printHistory, autoPrint, setAutoPrint,
+      printerQueue, setPrinterQueue, printHistory, printerTargetFileId, setPrinterTargetFileId,
+      lastQueuedFileId, lastQueuedJobId, autoPrint, setAutoPrint,
       updatePrintJob, completePrintJob, clearPrinterQueue, clearPrintHistory
     }}>
       {children}
