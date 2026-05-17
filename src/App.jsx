@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import './App.css';
-import { Settings, FileText, FolderClosed, Calculator as CalculatorIcon, Globe, Activity, Crosshair, Monitor, Printer, MemoryStick, File as FileIcon, Music } from 'lucide-react';
+import { Settings, FileText, FolderClosed, Calculator as CalculatorIcon, Globe, Activity, Crosshair, Monitor, Printer, MemoryStick, File as FileIcon, Music, HardDrive } from 'lucide-react';
 import Window from './components/Window';
 import ContextMenu, { WALLPAPERS, COLOR_SCHEMES, ICON_SIZES } from './components/ContextMenu';
 
@@ -24,6 +24,7 @@ import PrinterSimulator from './apps/PrinterSimulator';
 import MemoryManager from './apps/MemoryManager';
 import SettingsApp from './apps/SettingsApp';
 import Spotify from './apps/Spotify';
+import DiskManagement from './apps/DiskManagement';
 import CalendarFlyout from './components/CalendarFlyout';
 import StartMenu from './components/StartMenu';
 
@@ -39,9 +40,10 @@ const APPS = [
   { id: 'memmanager', name: 'Memory Manager', icon: MemoryStick, color: '#ec4899', component: MemoryManager, width: 950, height: 750 },
   { id: 'settings', name: 'Settings', icon: Settings, color: '#64748b', component: SettingsApp, width: 850, height: 700 },
   { id: 'spotify', name: 'SpotiFly', icon: Music, color: '#1DB954', component: Spotify, width: 980, height: 720 },
+  { id: 'diskmgmt', name: 'Disk Management', icon: HardDrive, color: '#a855f7', component: DiskManagement, width: 960, height: 720 },
 ];
 
-const PINNED_APPS = ['browser', 'filemanager', 'notepad', 'perfmonitor', 'memmanager', 'spotify', 'settings'];
+const PINNED_APPS = ['browser', 'filemanager', 'notepad', 'perfmonitor', 'memmanager', 'spotify', 'diskmgmt', 'settings'];
 
 import { useOS } from './context/OSContext';
 
@@ -114,6 +116,7 @@ function App() {
   const [openApps, setOpenApps] = useState([]);
   const [activeApp, setActiveApp] = useState(null);
   const [minimizedApps, setMinimizedApps] = useState([]);
+  const [hoveredAppId, setHoveredAppId] = useState(null);
 
   // ===== Desktop Personalization =====
   const [contextMenu, setContextMenu] = useState(null);
@@ -401,6 +404,123 @@ function App() {
     return () => window.removeEventListener('keydown', handler);
   }, [handleRefresh]);
 
+  const renderPreviewMockup = (appId) => {
+    switch (appId) {
+      case 'notepad':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', padding: '8px', height: '100%' }}>
+            <div style={{ height: '7px', width: '75%', background: theme === 'dark' ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.3)', borderRadius: '2px' }} />
+            <div style={{ height: '5px', width: '90%', background: theme === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)', borderRadius: '2px' }} />
+            <div style={{ height: '5px', width: '80%', background: theme === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)', borderRadius: '2px' }} />
+            <div style={{ height: '5px', width: '45%', background: theme === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)', borderRadius: '2px' }} />
+          </div>
+        );
+      case 'browser':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '6px', height: '100%' }}>
+            <div style={{ height: '12px', width: '100%', background: theme === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.06)', borderRadius: '4px', display: 'flex', alignItems: 'center', padding: '0 5px', fontSize: '6px', color: theme === 'dark' ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' }}>
+              https://google.com
+            </div>
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <div style={{ fontSize: '15px', fontWeight: 'bold', color: theme === 'dark' ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.2)', letterSpacing: '0.5px' }}>Google</div>
+            </div>
+          </div>
+        );
+      case 'spotify':
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', height: '100%', background: 'rgba(29, 185, 84, 0.12)' }}>
+            <div style={{ width: '32px', height: '32px', background: '#191414', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '14px', height: '14px', borderRadius: '50%', border: '2px solid #1DB954' }} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flex: 1 }}>
+              <div style={{ height: '6px', width: '80%', background: theme === 'dark' ? '#fff' : '#111827', borderRadius: '2px' }} />
+              <div style={{ height: '4px', width: '50%', background: theme === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)', borderRadius: '2px' }} />
+              <div style={{ display: 'flex', gap: '4px', marginTop: '2px' }}>
+                <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: theme === 'dark' ? '#fff' : '#1f2937' }} />
+                <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: theme === 'dark' ? '#fff' : '#1f2937' }} />
+              </div>
+            </div>
+          </div>
+        );
+      case 'calculator':
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '3px', padding: '6px', height: '100%' }}>
+            <div style={{ gridColumn: 'span 4', height: '12px', background: theme === 'dark' ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.08)', borderRadius: '2px' }} />
+            {Array.from({ length: 12 }).map((_, idx) => (
+              <div key={idx} style={{ background: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', borderRadius: '1.5px', height: '6px' }} />
+            ))}
+          </div>
+        );
+      case 'settings':
+        return (
+          <div style={{ display: 'flex', gap: '8px', padding: '6px', height: '100%' }}>
+            <div style={{ width: '22px', background: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.04)', borderRadius: '2px', display: 'flex', flexDirection: 'column', gap: '3px', padding: '3px' }}>
+              <div style={{ height: '3px', background: theme === 'dark' ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.25)', borderRadius: '1px' }} />
+              <div style={{ height: '3px', background: theme === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)', borderRadius: '1px' }} />
+              <div style={{ height: '3px', background: theme === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)', borderRadius: '1px' }} />
+            </div>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px', padding: '2px' }}>
+              <div style={{ height: '7px', width: '55%', background: theme === 'dark' ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.25)', borderRadius: '2px' }} />
+              <div style={{ height: '5px', width: '85%', background: theme === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)', borderRadius: '2px' }} />
+              <div style={{ height: '5px', width: '75%', background: theme === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)', borderRadius: '2px' }} />
+            </div>
+          </div>
+        );
+      case 'perfmonitor':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '6px', height: '100%' }}>
+            <div style={{ height: '7px', width: '60%', background: theme === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)', borderRadius: '2px' }} />
+            <div style={{ flex: 1, position: 'relative', overflow: 'hidden', borderBottom: theme === 'dark' ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(0,0,0,0.1)' }}>
+              <svg viewBox="0 0 100 30" style={{ width: '100%', height: '100%', fill: 'none' }}>
+                <path d="M0 20 L20 15 L40 25 L60 8 L80 18 L100 5" stroke="#a855f7" strokeWidth="2" />
+              </svg>
+            </div>
+          </div>
+        );
+      case 'memmanager':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '6px', height: '100%' }}>
+            <div style={{ height: '6px', width: '70%', background: theme === 'dark' ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.2)', borderRadius: '2px' }} />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px', flex: 1 }}>
+              <div style={{ background: 'rgba(236, 72, 153, 0.3)', borderRadius: '2px' }} />
+              <div style={{ background: 'rgba(236, 72, 153, 0.1)', borderRadius: '2px' }} />
+              <div style={{ background: 'rgba(236, 72, 153, 0.3)', borderRadius: '2px' }} />
+              <div style={{ background: 'rgba(236, 72, 153, 0.15)', borderRadius: '2px' }} />
+            </div>
+          </div>
+        );
+      case 'diskmgmt':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '6px', height: '100%' }}>
+            <div style={{ height: '6px', width: '65%', background: theme === 'dark' ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.3)', borderRadius: '2.5px' }} />
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {/* Disk 0 Mockup */}
+              <div style={{ height: '14px', background: theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', borderRadius: '3px', border: theme === 'dark' ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.08)', display: 'flex', overflow: 'hidden' }}>
+                <div style={{ width: '15px', background: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }} />
+                <div style={{ width: '10px', background: 'rgba(168, 85, 247, 0.2)', borderRight: '1px solid rgba(168, 85, 247, 0.4)' }} />
+                <div style={{ flex: 1, background: 'rgba(168, 85, 247, 0.1)', borderRight: '1px solid rgba(168, 85, 247, 0.4)' }} />
+                <div style={{ width: '12px', background: 'repeating-linear-gradient(45deg, rgba(0,0,0,0.1), rgba(0,0,0,0.1) 2px, transparent 2px, transparent 4px)' }} />
+              </div>
+              {/* Disk 1 Mockup */}
+              <div style={{ height: '14px', background: theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', borderRadius: '3px', border: theme === 'dark' ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.08)', display: 'flex', overflow: 'hidden' }}>
+                <div style={{ width: '15px', background: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }} />
+                <div style={{ flex: 1, background: 'rgba(168, 85, 247, 0.1)' }} />
+              </div>
+            </div>
+          </div>
+        );
+      default:
+        const appInfo = APPS.find(a => a.id === appId) || {};
+        const AppIcon = appInfo.icon;
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%', gap: '6px' }}>
+            {AppIcon && <AppIcon size={20} color={appInfo.color || '#fff'} style={{ opacity: 0.65 }} />}
+            <div style={{ height: '4px', width: '42px', background: theme === 'dark' ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.12)', borderRadius: '2px' }} />
+          </div>
+        );
+    }
+  };
+
   // Background wave colors adapt to theme
   const waveColors = theme === 'dark'
     ? {
@@ -580,17 +700,45 @@ function App() {
             <WindowsIcon size={24} color="#00a2ed" />
           </button>
           
-          {APPS.filter(app => PINNED_APPS.includes(app.id) || openApps.includes(app.id)).map((app) => (
-              <button 
-                key={`taskbar-${app.id}`}
-                id={`taskbar-${app.id}`}
-                className={`taskbar-icon ${openApps.includes(app.id) ? 'opened' : ''} ${activeApp === app.id ? 'active' : ''}`}
-                title={app.name}
-                onClick={() => toggleApp(app.id)}
+          {APPS.filter(app => PINNED_APPS.includes(app.id) || openApps.includes(app.id)).map((app) => {
+            const isOpened = openApps.includes(app.id);
+            const isMinimized = minimizedApps.includes(app.id);
+            return (
+              <div 
+                key={`taskbar-item-${app.id}`}
+                style={{ position: 'relative' }}
+                onMouseEnter={() => {
+                  if (isOpened) setHoveredAppId(app.id);
+                }}
+                onMouseLeave={() => setHoveredAppId(null)}
               >
-                <app.icon size={22} color={app.color} />
-              </button>
-          ))}
+                <button 
+                  id={`taskbar-${app.id}`}
+                  className={`taskbar-icon ${isOpened ? 'opened' : ''} ${activeApp === app.id ? 'active' : ''}`}
+                  onClick={() => {
+                    toggleApp(app.id);
+                    setHoveredAppId(null);
+                  }}
+                >
+                  <app.icon size={22} color={app.color} />
+                </button>
+                
+                {/* Taskbar Window Preview Card */}
+                {hoveredAppId === app.id && isOpened && (
+                  <div className="taskbar-preview-card glass-panel">
+                    <div className="taskbar-preview-header">
+                      <app.icon size={12} color={app.color} />
+                      <span>{app.name}</span>
+                      {isMinimized && <span className="preview-status-badge">minimized</span>}
+                    </div>
+                    <div className="taskbar-preview-content">
+                      {renderPreviewMockup(app.id)}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
         
         <div className="taskbar-right">

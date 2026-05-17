@@ -420,5 +420,90 @@ body.dark-theme .taskbar-clock-btn:hover {
   letter-spacing: 0.5px;
 }
 
+/* ===== Taskbar Window Preview Card ===== */
+.taskbar-preview-card {
+  position: absolute;
+  bottom: 74px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 140px;
+  height: 100px;
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.90) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 10000;
+  pointer-events: none;
+  animation: previewSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
 
+body.dark-theme .taskbar-preview-card {
+  background: rgba(15, 17, 23, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
 
+@keyframes previewSlideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+.taskbar-preview-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 6px;
+  width: 100%;
+  overflow: hidden;
+}
+
+body.dark-theme .taskbar-preview-header {
+  color: #fff;
+}
+
+.taskbar-preview-header span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70px;
+}
+
+.preview-status-badge {
+  font-size: 8px;
+  font-weight: 500;
+  color: #0ea5e9;
+  text-transform: uppercase;
+  margin-left: auto;
+  opacity: 0.85;
+}
+
+body.dark-theme .preview-status-badge {
+  color: #38bdf8;
+}
+
+.taskbar-preview-content {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+body.dark-theme .taskbar-preview-content {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}

@@ -116,14 +116,15 @@
 .window-container.allow-transitions {
   transition: width 0.3s cubic-bezier(0.1, 0.9, 0.2, 1),
               height 0.3s cubic-bezier(0.1, 0.9, 0.2, 1),
-              opacity 0.3s cubic-bezier(0.1, 0.9, 0.2, 1),
-              scale 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
+              opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              scale 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              margin-top 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Smooth exit closing states */
 .window-container.closing {
   transition: none !important;
-  animation: windowClose 0.2s cubic-bezier(0.1, 0.9, 0.2, 1) forwards !important;
+  animation: windowClose 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
   pointer-events: none !important;
   transform-origin: center center !important;
 }
@@ -132,19 +133,24 @@
   from {
     opacity: 1;
     scale: 1;
+    margin-top: 0;
   }
   to {
     opacity: 0;
-    scale: 0.93;
+    scale: 0.95;
+    margin-top: 30px;
   }
 }
 
-/* Hardware minimized state: macOS-style Genie sucking/zoom effect towards taskbar icon */
+/* Hardware minimized state: Premium Windows-style slide and scale downward matching Start Menu profile */
 .window-container.minimized {
   opacity: 0 !important;
-  scale: 0.02 !important;
+  scale: 0.95 !important;
+  margin-top: 30px !important;
   pointer-events: none !important;
-  transition: scale 0.4s cubic-bezier(0.5, 0, 0.15, 1),
-              opacity 0.3s cubic-bezier(0.5, 0, 0.15, 1) !important;
+  transform-origin: center center !important;
+  transition: margin-top 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              scale 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
