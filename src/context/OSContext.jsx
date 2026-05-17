@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 
 const OSContext = createContext();
 
@@ -360,6 +360,28 @@ export const OSProvider = ({ children }) => {
     setPrintHistory([]);
   };
 
+  // --- 5. PERSONALIZATION STATES (Persisted in localStorage) ---
+  const [theme, setTheme] = useState(() => localStorage.getItem('os-theme') || 'light');
+  const [colorScheme, setColorScheme] = useState(() => localStorage.getItem('os-color-scheme') || 'purple');
+  const [wallpaper, setWallpaper] = useState(() => localStorage.getItem('os-wallpaper') || 'none');
+  const [iconSizeId, setIconSizeId] = useState(() => localStorage.getItem('os-icon-size') || 'medium');
+
+  useEffect(() => {
+    localStorage.setItem('os-theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem('os-color-scheme', colorScheme);
+  }, [colorScheme]);
+
+  useEffect(() => {
+    localStorage.setItem('os-wallpaper', wallpaper);
+  }, [wallpaper]);
+
+  useEffect(() => {
+    localStorage.setItem('os-icon-size', iconSizeId);
+  }, [iconSizeId]);
+
   return (
     <OSContext.Provider value={{
       files, fileSystem, getFolder, createFile, createFolder, updateFile, deleteFile, deleteItem, renameItem, moveItem, copyItem, pasteItem, clipboard,
@@ -371,7 +393,8 @@ export const OSProvider = ({ children }) => {
       ioQueue, addToPrinterQueue, processNextIo,
       printerQueue, setPrinterQueue, printHistory, printerTargetFileId, setPrinterTargetFileId,
       lastQueuedFileId, lastQueuedJobId, autoPrint, setAutoPrint,
-      updatePrintJob, completePrintJob, clearPrinterQueue, clearPrintHistory
+      updatePrintJob, completePrintJob, clearPrinterQueue, clearPrintHistory,
+      theme, setTheme, colorScheme, setColorScheme, wallpaper, setWallpaper, iconSizeId, setIconSizeId
     }}>
       {children}
     </OSContext.Provider>

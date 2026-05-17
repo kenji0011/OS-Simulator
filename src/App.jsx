@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import './App.css';
-import { Settings, FileText, FolderClosed, Calculator as CalculatorIcon, Globe, Activity, Crosshair, Monitor, Printer, MemoryStick, File as FileIcon } from 'lucide-react';
+import { Settings, FileText, FolderClosed, Calculator as CalculatorIcon, Globe, Activity, Crosshair, Monitor, Printer, MemoryStick, File as FileIcon, Music } from 'lucide-react';
 import Window from './components/Window';
 import ContextMenu, { WALLPAPERS, COLOR_SCHEMES, ICON_SIZES } from './components/ContextMenu';
 
@@ -22,20 +22,26 @@ import Valorant from './apps/Valorant';
 import PerformanceMonitor from './apps/PerformanceMonitor';
 import PrinterSimulator from './apps/PrinterSimulator';
 import MemoryManager from './apps/MemoryManager';
+import SettingsApp from './apps/SettingsApp';
+import Spotify from './apps/Spotify';
+import CalendarFlyout from './components/CalendarFlyout';
+import StartMenu from './components/StartMenu';
 
 const APPS = [
-  { id: 'notepad', name: 'Notepad', icon: FileText, color: '#3b82f6', component: Notepad },
-  { id: 'filemanager', name: 'File Manager', icon: FolderClosed, color: '#eab308', component: FileManager },
-  { id: 'valorant', name: 'VALORANT', icon: Crosshair, color: '#ff4655', component: Valorant },
-  { id: 'calculator', name: 'Calculator', icon: CalculatorIcon, color: '#10b981', component: Calculator },
-  { id: 'browser', name: 'Browser', icon: Globe, color: '#6366f1', component: Browser },
-  { id: 'taskmanager', name: 'CPU Scheduling', icon: Activity, color: '#ef4444', component: TaskManager },
-  { id: 'perfmonitor', name: 'Task Manager', icon: Monitor, color: '#c471ed', component: PerformanceMonitor },
-  { id: 'printer', name: 'Print Spooler', icon: Printer, color: '#a78bfa', component: PrinterSimulator },
-  { id: 'memmanager', name: 'Memory Manager', icon: MemoryStick, color: '#ec4899', component: MemoryManager },
+  { id: 'notepad', name: 'Notepad', icon: FileText, color: '#3b82f6', component: Notepad, width: 700, height: 680 },
+  { id: 'filemanager', name: 'File Manager', icon: FolderClosed, color: '#eab308', component: FileManager, width: 950, height: 750 },
+  { id: 'valorant', name: 'VALORANT', icon: Crosshair, color: '#ff4655', component: Valorant, width: 1050, height: 750 },
+  { id: 'calculator', name: 'Calculator', icon: CalculatorIcon, color: '#10b981', component: Calculator, width: 350, height: 580 },
+  { id: 'browser', name: 'Browser', icon: Globe, color: '#6366f1', component: Browser, width: 1000, height: 780 },
+  { id: 'taskmanager', name: 'CPU Scheduling', icon: Activity, color: '#ef4444', component: TaskManager, width: 1000, height: 780 },
+  { id: 'perfmonitor', name: 'Task Manager', icon: Monitor, color: '#c471ed', component: PerformanceMonitor, width: 900, height: 720 },
+  { id: 'printer', name: 'Print Spooler', icon: Printer, color: '#a78bfa', component: PrinterSimulator, width: 850, height: 720 },
+  { id: 'memmanager', name: 'Memory Manager', icon: MemoryStick, color: '#ec4899', component: MemoryManager, width: 950, height: 750 },
+  { id: 'settings', name: 'Settings', icon: Settings, color: '#64748b', component: SettingsApp, width: 850, height: 700 },
+  { id: 'spotify', name: 'SpotiFly', icon: Music, color: '#1DB954', component: Spotify, width: 980, height: 720 },
 ];
 
-const PINNED_APPS = ['browser', 'filemanager', 'notepad', 'perfmonitor', 'memmanager'];
+const PINNED_APPS = ['browser', 'filemanager', 'notepad', 'perfmonitor', 'memmanager', 'spotify', 'settings'];
 
 import { useOS } from './context/OSContext';
 
@@ -98,18 +104,27 @@ const LIGHT_THEME_VARS = {
 function App() {
   const {
     systemAction, dispatchSystemAction, createFile, createFolder,
-    getFolder, setNotepadFile, setFileManagerTargetFolderId
+    getFolder, setNotepadFile, setFileManagerTargetFolderId,
+    theme, setTheme,
+    colorScheme, setColorScheme,
+    wallpaper, setWallpaper,
+    iconSizeId, setIconSizeId,
+    deleteItem, renameItem
   } = useOS();
   const [openApps, setOpenApps] = useState([]);
   const [activeApp, setActiveApp] = useState(null);
+  const [minimizedApps, setMinimizedApps] = useState([]);
 
   // ===== Desktop Personalization =====
-  const [theme, setTheme] = useState('light');
-  const [colorScheme, setColorScheme] = useState('purple');
-  const [wallpaper, setWallpaper] = useState('none');
-  const [iconSizeId, setIconSizeId] = useState('medium');
   const [contextMenu, setContextMenu] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [showCalendarFlyout, setShowCalendarFlyout] = useState(false);
+  const [showStartMenu, setShowStartMenu] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
+  const [isAsleep, setIsAsleep] = useState(false);
+  const [isRestarting, setIsRestarting] = useState(false);
+  const [renamingItemId, setRenamingItemId] = useState(null);
+  const [renameValue, setRenameValue] = useState('');
 
   // Apply theme & color scheme CSS variables
   useEffect(() => {
@@ -128,6 +143,20 @@ function App() {
     document.body.classList.toggle('dark-theme', theme === 'dark');
   }, [theme, colorScheme]);
 
+  // Close Start Menu and Calendar Flyout on clicking outside
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (!e.target.closest('.start-menu') && !e.target.closest('.start-btn')) {
+        setShowStartMenu(false);
+      }
+      if (!e.target.closest('.calendar-flyout') && !e.target.closest('.taskbar-clock-btn')) {
+        setShowCalendarFlyout(false);
+      }
+    };
+    window.addEventListener('click', handleOutsideClick);
+    return () => window.removeEventListener('click', handleOutsideClick);
+  }, []);
+
   // Get active icon size config
   const iconCfg = useMemo(() => ICON_SIZES.find(s => s.id === iconSizeId) || ICON_SIZES[1], [iconSizeId]);
 
@@ -140,29 +169,55 @@ function App() {
 
   React.useEffect(() => {
     if (systemAction?.action === 'OPEN_APP') {
-      if (!openApps.includes(systemAction.appId)) {
-        setOpenApps(prev => [...prev, systemAction.appId]);
+      const appId = systemAction.appId;
+      if (!openApps.includes(appId)) {
+        setOpenApps(prev => [...prev, appId]);
       }
-      setActiveApp(systemAction.appId);
+      setMinimizedApps(prev => prev.filter(id => id !== appId));
+      setActiveApp(appId);
       dispatchSystemAction(null);
     }
   }, [systemAction, openApps, dispatchSystemAction]);
 
   const toggleApp = (appId) => {
-    if (openApps.includes(appId)) {
-      if (activeApp === appId) {
+    const isOpen = openApps.includes(appId);
+    const isMinimized = minimizedApps.includes(appId);
+    const isActive = activeApp === appId;
+
+    if (isOpen) {
+      if (isMinimized) {
+        setMinimizedApps(prev => prev.filter(id => id !== appId));
+        setActiveApp(appId);
+      } else if (isActive) {
+        setMinimizedApps(prev => [...prev, appId]);
         setActiveApp(null);
       } else {
         setActiveApp(appId);
       }
     } else {
-      setOpenApps([...openApps, appId]);
+      setOpenApps(prev => [...prev, appId]);
+      setMinimizedApps(prev => prev.filter(id => id !== appId));
       setActiveApp(appId);
     }
   };
 
+  const minimizeApp = (appId) => {
+    if (!minimizedApps.includes(appId)) {
+      setMinimizedApps(prev => [...prev, appId]);
+    }
+    if (activeApp === appId) {
+      const remainingOpen = openApps.filter(id => id !== appId && !minimizedApps.includes(id));
+      if (remainingOpen.length > 0) {
+        setActiveApp(remainingOpen[remainingOpen.length - 1]);
+      } else {
+        setActiveApp(null);
+      }
+    }
+  };
+
   const closeApp = (appId) => {
-    setOpenApps(openApps.filter(id => id !== appId));
+    setOpenApps(prev => prev.filter(id => id !== appId));
+    setMinimizedApps(prev => prev.filter(id => id !== appId));
     if (activeApp === appId) {
       setActiveApp(null);
     }
@@ -197,6 +252,19 @@ function App() {
     return positions;
   });
 
+  const getIconPosition = useCallback((appId) => {
+    if (iconPositions[appId]) return iconPositions[appId];
+    
+    // Dynamic calculation fallback
+    const idx = APPS.findIndex(a => a.id === appId);
+    const gridW = iconCfg.boxW + 20;
+    const gridH = iconCfg.boxH + 20;
+    const rows = Math.max(1, Math.floor((window.innerHeight - 80) / gridH));
+    const col = Math.floor(idx / rows);
+    const row = idx % rows;
+    return { x: GRID_PAD + col * gridW, y: GRID_PAD + row * gridH };
+  }, [iconPositions, iconCfg]);
+
   // Recalculate icon positions when icon size changes
   useEffect(() => {
     const gridW = iconCfg.boxW + 20;
@@ -215,7 +283,7 @@ function App() {
 
   const onIconMouseDown = useCallback((e, appId) => {
     e.preventDefault();
-    const pos = iconPositions[appId];
+    const pos = getIconPosition(appId);
     dragRef.current = { isDragging: true, appId, startX: e.clientX, startY: e.clientY, origX: pos.x, origY: pos.y, moved: false };
 
     const onMouseMove = (ev) => {
@@ -230,7 +298,7 @@ function App() {
     const onMouseUp = () => {
       dragRef.current.isDragging = false;
       setIconPositions(prev => {
-        const raw = prev[dragRef.current.appId];
+        const raw = prev[dragRef.current.appId] || getIconPosition(dragRef.current.appId);
         if (!raw) return prev;
         return { ...prev, [dragRef.current.appId]: snapToGrid(raw.x, raw.y) };
       });
@@ -240,7 +308,7 @@ function App() {
 
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
-  }, [iconPositions]);
+  }, [iconPositions, getIconPosition]);
 
   const onIconDoubleClick = useCallback((appId) => {
     if (!dragRef.current.moved) {
@@ -262,11 +330,41 @@ function App() {
 
   // ===== Right-Click Context Menu =====
   const handleContextMenu = useCallback((e) => {
+    // Shift + Right-Click bypasses custom context menu to allow native 'Inspect Element'
+    if (e.shiftKey) return;
+    
     e.preventDefault();
-    // Only show when clicking the desktop area, not on icons or windows
-    if (e.target.closest('.desktop-icon') || e.target.closest('.window-container') || e.target.closest('.taskbar')) return;
+    
+    // Check if right-clicking a desktop icon
+    const iconEl = e.target.closest('.desktop-icon');
+    if (iconEl) {
+      const appId = iconEl.getAttribute('data-app-id');
+      const itemId = iconEl.getAttribute('data-item-id');
+      
+      if (itemId) {
+        const item = desktopItems.find(i => i.id === itemId);
+        if (item) {
+          setContextMenu({ x: e.clientX, y: e.clientY, item });
+        }
+      } else if (appId) {
+        const app = APPS.find(a => a.id === appId);
+        if (app) {
+          setContextMenu({ x: e.clientX, y: e.clientY, app });
+        }
+      }
+      return;
+    }
+    
+    if (e.target.closest('.window-container') || e.target.closest('.taskbar')) return;
     setContextMenu({ x: e.clientX, y: e.clientY });
-  }, []);
+  }, [desktopItems]);
+
+  const handleFinishRename = (itemId) => {
+    if (renameValue.trim()) {
+      renameItem(itemId, renameValue.trim());
+    }
+    setRenamingItemId(null);
+  };
 
   const handleRefresh = useCallback(() => {
     setRefreshKey(k => k + 1);
@@ -318,6 +416,31 @@ function App() {
 
   return (
     <div className="desktop-container" onContextMenu={handleContextMenu}>
+      {/* Windows 11 Power Overlays */}
+      {isRestarting && (
+        <div className="restart-screen">
+          <div className="restart-spinner"></div>
+          <div className="restart-text">Restarting...</div>
+        </div>
+      )}
+      
+      {isAsleep && (
+        <div className="sleep-screen" onClick={() => setIsAsleep(false)}>
+          <div className="sleep-led"></div>
+          <div className="sleep-text">Click anywhere to wake up</div>
+        </div>
+      )}
+      
+      {isLocked && (
+        <div className="lockscreen">
+          <div className="lockscreen-content">
+            <div className="lockscreen-time">{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+            <div className="lockscreen-date">{time.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}</div>
+            <button className="lockscreen-unlock-btn" onClick={() => setIsLocked(false)}>Sign In</button>
+          </div>
+        </div>
+      )}
+
       {/* Background Wallpaper or Gradient Curves */}
       {wallpaperUrl ? (
         <div
@@ -343,15 +466,16 @@ function App() {
           <div 
             key={app.id} 
             className="desktop-icon"
+            data-app-id={app.id}
             style={{
               position: 'absolute',
-              left: iconPositions[app.id]?.x ?? 20,
-              top: iconPositions[app.id]?.y ?? 20,
+              left: getIconPosition(app.id).x,
+              top: getIconPosition(app.id).y,
               width: iconCfg.boxW,
               height: iconCfg.boxH,
             }}
             onMouseDown={(e) => onIconMouseDown(e, app.id)}
-            onDoubleClick={() => onIconDoubleClick(app.id)}
+            onDoubleClick={(e) => onIconDoubleClick(app.id)}
           >
             <app.icon size={iconCfg.iconPx} color={app.color} strokeWidth={1.5} />
             <span style={{ fontSize: iconCfg.labelPx }}>{app.name}</span>
@@ -372,6 +496,7 @@ function App() {
             <div
               key={item.id}
               className="desktop-icon"
+              data-item-id={item.id}
               style={{
                 position: 'absolute',
                 left,
@@ -382,7 +507,39 @@ function App() {
               onDoubleClick={() => openDesktopItem(item)}
             >
               <Icon size={iconCfg.iconPx} color={color} strokeWidth={1.5} />
-              <span style={{ fontSize: iconCfg.labelPx }}>{item.name}</span>
+              {renamingItemId === item.id ? (
+                <input
+                  className="desktop-icon-rename-input"
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleFinishRename(item.id);
+                    } else if (e.key === 'Escape') {
+                      setRenamingItemId(null);
+                    }
+                  }}
+                  onBlur={() => handleFinishRename(item.id)}
+                  autoFocus
+                  onClick={(e) => e.stopPropagation()}
+                  onDoubleClick={(e) => e.stopPropagation()}
+                  style={{
+                    width: '90%',
+                    background: 'rgba(0, 0, 0, 0.75)',
+                    border: '1px solid var(--accent-purple)',
+                    borderRadius: '4px',
+                    color: '#fff',
+                    fontSize: '11px',
+                    textAlign: 'center',
+                    outline: 'none',
+                    padding: '2px 4px',
+                    marginTop: '4px',
+                    zIndex: 10
+                  }}
+                />
+              ) : (
+                <span style={{ fontSize: iconCfg.labelPx }}>{item.name}</span>
+              )}
             </div>
           );
         })}
@@ -396,8 +553,13 @@ function App() {
               key={app.id}
               app={app} 
               onClose={() => closeApp(app.id)}
+              onMinimize={() => minimizeApp(app.id)}
+              isMinimized={minimizedApps.includes(app.id)}
               isActive={activeApp === app.id}
-              bringToFront={() => setActiveApp(app.id)}
+              bringToFront={() => {
+                setMinimizedApps(prev => prev.filter(id => id !== app.id));
+                setActiveApp(app.id);
+              }}
             >
               <AppContent />
             </Window>
@@ -408,13 +570,20 @@ function App() {
       {/* Taskbar */}
       <div className="taskbar glass-panel">
         <div className="taskbar-center">
-          <button className="taskbar-icon start-btn" onClick={() => toggleApp('taskmanager')}>
-            <WindowsIcon size={24} color="#fff" />
+          <button 
+            className={`taskbar-icon start-btn ${showStartMenu ? 'active' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowStartMenu(!showStartMenu);
+            }}
+          >
+            <WindowsIcon size={24} color="#00a2ed" />
           </button>
           
           {APPS.filter(app => PINNED_APPS.includes(app.id) || openApps.includes(app.id)).map((app) => (
               <button 
                 key={`taskbar-${app.id}`}
+                id={`taskbar-${app.id}`}
                 className={`taskbar-icon ${openApps.includes(app.id) ? 'opened' : ''} ${activeApp === app.id ? 'active' : ''}`}
                 title={app.name}
                 onClick={() => toggleApp(app.id)}
@@ -425,20 +594,74 @@ function App() {
         </div>
         
         <div className="taskbar-right">
-          <span>{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-          <Settings size={18} />
+          <div 
+            className="taskbar-clock-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowCalendarFlyout(!showCalendarFlyout);
+            }}
+          >
+            <span style={{ fontWeight: 500 }}>{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            <span style={{ fontSize: '10px', opacity: 0.8, marginTop: '2px' }}>{time.toLocaleDateString()}</span>
+          </div>
+          <button 
+            onClick={() => toggleApp('settings')}
+            className="taskbar-right-settings-btn"
+            title="Settings"
+          >
+            <Settings size={18} />
+          </button>
         </div>
       </div>
+
+      {/* Start Menu */}
+      <StartMenu 
+        isOpen={showStartMenu}
+        apps={APPS}
+        onLaunchApp={(appId, recommendedFileId) => {
+          if (recommendedFileId) {
+            setNotepadFile(recommendedFileId);
+          }
+          toggleApp(appId);
+        }}
+        onClose={() => setShowStartMenu(false)}
+        onPowerAction={(action) => {
+          if (action === 'lock') {
+            setIsLocked(true);
+          } else if (action === 'sleep') {
+            setIsAsleep(true);
+          } else if (action === 'restart') {
+            setIsRestarting(true);
+            setTimeout(() => {
+              window.location.reload();
+            }, 2000);
+          }
+        }}
+      />
+
+      {/* Calendar Flyout */}
+      {showCalendarFlyout && (
+        <CalendarFlyout onClose={() => setShowCalendarFlyout(false)} />
+      )}
 
       {/* Context Menu */}
       {contextMenu && (
         <ContextMenu
           x={contextMenu.x}
           y={contextMenu.y}
+          item={contextMenu.item}
+          app={contextMenu.app}
           onClose={() => setContextMenu(null)}
           onRefresh={handleRefresh}
           onNewFolder={handleNewFolder}
           onNewFile={handleNewFile}
+          onOpenItem={(item) => openDesktopItem(item)}
+          onOpenApp={(appId) => toggleApp(appId)}
+          onRenameItem={(item) => {
+            setRenamingItemId(item.id);
+            setRenameValue(item.name);
+          }}
+          onDeleteItem={(item) => deleteItem(item.id)}
           theme={theme}
           setTheme={setTheme}
           colorScheme={colorScheme}

@@ -9,11 +9,150 @@ const PAPER_SIZES = {
   'A3': { name: 'A3', width: 297, height: 420, label: '297 × 420 mm' },
 };
 
+const CustomDropdown = ({ value, onChange, options, isDark, placeholder = "Select option" }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener('mousedown', handleOutsideClick);
+    return () => window.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  const selectedOption = options.find(opt => opt.value === value);
+
+  return (
+    <div ref={dropdownRef} style={{ position: 'relative', width: '100%', zIndex: isOpen ? 9999 : 1 }}>
+      <button
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          setIsOpen(!isOpen);
+        }}
+        type="button"
+        style={{
+          width: '100%',
+          padding: '8px 12px',
+          borderRadius: '6px',
+          border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #ccc',
+          background: isDark ? 'rgba(0,0,0,0.3)' : '#fff',
+          color: isDark ? '#fff' : '#000',
+          fontSize: '13px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          cursor: 'pointer',
+          textAlign: 'left',
+          outline: 'none',
+          boxShadow: isDark ? '0 2px 5px rgba(0,0,0,0.2)' : '0 1px 2px rgba(0,0,0,0.05)',
+          transition: 'all 0.15s ease'
+        }}
+      >
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <svg
+          width="10"
+          height="6"
+          viewBox="0 0 10 6"
+          fill="none"
+          style={{
+            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.2s ease',
+            flexShrink: 0,
+            opacity: 0.7,
+            stroke: 'currentColor',
+            strokeWidth: 1.5,
+            strokeLinecap: 'round',
+            strokeLinejoin: 'round'
+          }}
+        >
+          <path d="M1 1L5 5L9 1" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 4px)',
+            left: 0,
+            right: 0,
+            background: isDark ? 'rgba(30, 30, 45, 0.98)' : '#fff',
+            border: isDark ? '1px solid rgba(255,255,255,0.15)' : '1px solid #e5e7eb',
+            borderRadius: '8px',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
+            maxHeight: '200px',
+            overflowY: 'auto',
+            backdropFilter: 'blur(10px)',
+            padding: '4px',
+            zIndex: 999999
+          }}
+        >
+          {options.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onChange(option.value);
+                setIsOpen(false);
+              }}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: 'none',
+                background: option.value === value 
+                  ? (isDark ? 'rgba(99, 102, 241, 0.25)' : 'rgba(99, 102, 241, 0.1)')
+                  : 'transparent',
+                color: option.value === value
+                  ? (isDark ? '#a5b4fc' : '#4f46e5')
+                  : (isDark ? '#e2e8f0' : '#374151'),
+                fontSize: '13px',
+                textAlign: 'left',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                transition: 'background 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (option.value !== value) {
+                  e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (option.value !== value) {
+                  e.currentTarget.style.background = 'transparent';
+                }
+              }}
+            >
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{option.label}</span>
+              {option.value === value && (
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <polyline points="10 3 4.5 8.5 2 6" />
+                </svg>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const PrinterSimulator = () => {
   const {
     files, printerQueue, addToPrinterQueue, completePrintJob,
     printHistory, clearPrintHistory, activeNotepadFile, lastSavedFileId,
-    printerTargetFileId, setPrinterTargetFileId, lastQueuedFileId, lastQueuedJobId
+    printerTargetFileId, setPrinterTargetFileId, lastQueuedFileId, lastQueuedJobId,
+    theme
   } = useOS();
 
   const [selectedFileId, setSelectedFileId] = useState('');
@@ -26,7 +165,16 @@ const PrinterSimulator = () => {
   const [printProgress, setPrintProgress] = useState(0);
   const [printPhase, setPrintPhase] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
   const lastPreferredFileId = useRef(null);
+
+  const isDark = theme === 'dark';
+
+  useEffect(() => {
+    const handleResize = () => setViewportHeight(window.innerHeight);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const printerTargetFile = files.find(f => f.id === printerTargetFileId);
@@ -55,6 +203,22 @@ const PrinterSimulator = () => {
   const paper = PAPER_SIZES[paperSize];
   const isLandscape = orientation === 'landscape';
   const marginPx = margins === 'narrow' ? 12 : margins === 'wide' ? 32 : 20;
+
+  const fileOptions = [
+    { value: '', label: '-- Select File --' },
+    ...files.map(f => ({ value: f.id, label: f.name }))
+  ];
+
+  const paperOptions = Object.entries(PAPER_SIZES).map(([key, p]) => ({
+    value: key,
+    label: `${p.name} (${p.label})`
+  }));
+
+  const marginOptions = [
+    { value: 'narrow', label: 'Narrow' },
+    { value: 'normal', label: 'Normal' },
+    { value: 'wide', label: 'Wide' }
+  ];
 
   const handlePrint = () => {
     if (!selectedFile || isPrinting) return;
@@ -86,40 +250,95 @@ const PrinterSimulator = () => {
     }, 80);
   };
 
-  // Calculate preview paper dimensions to fit the available space
-  const PREVIEW_MAX_H = 420;
+  // Calculate preview paper dimensions to fit the available space dynamically
   const ratio = isLandscape ? paper.width / paper.height : paper.height / paper.width;
-  const previewH = Math.min(PREVIEW_MAX_H, 400);
+  const previewH = Math.min(viewportHeight - 220, 680);
   const previewW = previewH / ratio;
 
+  // --- Dynamic Styled Components ---
+  const Section = ({ title, extra, children }) => (
+    <div style={{ 
+      background: isDark ? 'rgba(0,0,0,0.2)' : '#f9fafb', 
+      borderRadius: '8px', 
+      border: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e5e7eb' 
+    }}>
+      <div style={{ 
+        padding: '8px 12px', fontSize: '11px', fontWeight: 700, 
+        textTransform: 'uppercase', letterSpacing: '0.5px', 
+        color: isDark ? '#888' : '#64748b', 
+        borderBottom: isDark ? '1px solid rgba(255,255,255,0.04)' : '1px solid #e5e7eb', 
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center' 
+      }}>
+        <span>{title}</span>
+        {extra}
+      </div>
+      <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {children}
+      </div>
+    </div>
+  );
+
+  const Label = ({ children }) => (
+    <span style={{ fontSize: '11px', color: isDark ? '#aaa' : '#475569', display: 'block' }}>{children}</span>
+  );
+
+  const ToggleBtn = ({ active, onClick, children }) => (
+    <button onClick={onClick} style={{
+      flex: 1, padding: '7px', border: 'none', cursor: 'pointer',
+      fontSize: '12px', fontWeight: 600, textAlign: 'center',
+      background: active 
+        ? (isDark ? 'rgba(99,102,241,0.3)' : 'rgba(99,102,241,0.15)') 
+        : (isDark ? 'rgba(0,0,0,0.2)' : '#f3f4f6'),
+      color: active ? (isDark ? '#a5b4fc' : '#4f46e5') : (isDark ? '#888' : '#4b5563'), 
+      transition: 'all 0.2s',
+      borderRadius: '4px',
+      margin: '2px'
+    }}>
+      {children}
+    </button>
+  );
+
+  const selectStyle = {
+    width: '100%', padding: '7px 10px', borderRadius: '6px',
+    border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #ccc', 
+    background: isDark ? 'rgba(0,0,0,0.3)' : '#fff',
+    color: isDark ? '#fff' : '#000', fontSize: '13px', outline: 'none', cursor: 'pointer'
+  };
+
+  const counterBtn = {
+    width: '28px', height: '28px', borderRadius: '6px', border: 'none',
+    background: isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb', 
+    color: isDark ? '#fff' : '#1e293b', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center'
+  };
+
   return (
-    <div style={{ height: '100%', display: 'flex', background: '#1a1a2e', color: '#e0e0e0', fontFamily: 'Inter, sans-serif', overflow: 'hidden' }}>
+    <div style={{ height: '100%', display: 'flex', background: isDark ? '#1a1a2e' : '#f3f4f6', color: isDark ? '#e0e0e0' : '#1e293b', fontFamily: 'Inter, sans-serif', overflow: 'hidden' }}>
       
       {/* ===== LEFT: Print Settings ===== */}
-      <div style={{ width: '280px', minWidth: '280px', borderRight: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+      <div style={{ width: '280px', minWidth: '280px', borderRight: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', overflowY: 'auto', background: isDark ? '#1a1a2e' : '#fff' }}>
         {/* Header */}
-        <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+        <div style={{ padding: '14px 16px', borderBottom: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
           <Printer size={20} color="#a78bfa" />
-          <span style={{ fontSize: '16px', fontWeight: 700, color: '#fff' }}>Print</span>
+          <span style={{ fontSize: '16px', fontWeight: 700, color: isDark ? '#fff' : '#000' }}>Print</span>
         </div>
 
         <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {/* Document */}
           <Section title="Document">
             <Label>Select File</Label>
-            <select
+            <CustomDropdown
               value={selectedFileId}
-              onChange={e => {
-                setSelectedFileId(e.target.value);
+              onChange={val => {
+                setSelectedFileId(val);
                 setPrinterTargetFileId(null);
               }}
-              style={selectStyle}
-            >
-              <option value="">-- Select File --</option>
-              {files.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-            </select>
+              options={fileOptions}
+              isDark={isDark}
+              placeholder="-- Select File --"
+            />
             {selectedFile && (
-              <div style={{ fontSize: '11px', color: '#666', display: 'flex', gap: '10px', marginTop: '2px' }}>
+              <div style={{ fontSize: '11px', color: isDark ? '#666' : '#64748b', display: 'flex', gap: '10px', marginTop: '2px' }}>
                 <span>{selectedFile.size || fileContent.length} bytes</span>
                 <span>{fileContent.split('\n').length} lines</span>
               </div>
@@ -128,16 +347,17 @@ const PrinterSimulator = () => {
 
           {/* Paper Size */}
           <Section title="Paper Size">
-            <select style={selectStyle} value={paperSize} onChange={e => setPaperSize(e.target.value)}>
-              {Object.entries(PAPER_SIZES).map(([key, p]) => (
-                <option key={key} value={key}>{p.name} ({p.label})</option>
-              ))}
-            </select>
+            <CustomDropdown
+              value={paperSize}
+              onChange={val => setPaperSize(val)}
+              options={paperOptions}
+              isDark={isDark}
+            />
           </Section>
 
           {/* Orientation */}
           <Section title="Orientation">
-            <div style={{ display: 'flex', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div style={{ display: 'flex', borderRadius: '8px', overflow: 'hidden', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e5e7eb', background: isDark ? 'transparent' : '#f3f4f6' }}>
               <ToggleBtn active={orientation === 'portrait'} onClick={() => setOrientation('portrait')}>
                 <span style={{ display: 'inline-block', width: '10px', height: '14px', border: '2px solid currentColor', borderRadius: '1px', marginRight: '6px', verticalAlign: 'middle' }} />
                 Portrait
@@ -152,20 +372,21 @@ const PrinterSimulator = () => {
           {/* Color / Margins / Copies */}
           <Section title="Options">
             <Label>Color</Label>
-            <div style={{ display: 'flex', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div style={{ display: 'flex', borderRadius: '8px', overflow: 'hidden', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e5e7eb', background: isDark ? 'transparent' : '#f3f4f6' }}>
               <ToggleBtn active={colorMode === 'bw'} onClick={() => setColorMode('bw')}>B&W</ToggleBtn>
               <ToggleBtn active={colorMode === 'color'} onClick={() => setColorMode('color')}>Color</ToggleBtn>
             </div>
             <Label>Margins</Label>
-            <select style={selectStyle} value={margins} onChange={e => setMargins(e.target.value)}>
-              <option value="narrow">Narrow</option>
-              <option value="normal">Normal</option>
-              <option value="wide">Wide</option>
-            </select>
-            <Label>Copies</Label>
+            <CustomDropdown
+              value={margins}
+              onChange={val => setMargins(val)}
+              options={marginOptions}
+              isDark={isDark}
+            />
+            <Label style={{ marginTop: '4px' }}>Copies</Label>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <button style={counterBtn} onClick={() => setCopies(Math.max(1, copies - 1))}><Minus size={14} /></button>
-              <span style={{ fontSize: '16px', fontWeight: 700, color: '#fff', minWidth: '24px', textAlign: 'center' }}>{copies}</span>
+              <span style={{ fontSize: '16px', fontWeight: 700, color: isDark ? '#fff' : '#000', minWidth: '24px', textAlign: 'center' }}>{copies}</span>
               <button style={counterBtn} onClick={() => setCopies(Math.min(99, copies + 1))}><Plus size={14} /></button>
             </div>
           </Section>
@@ -179,8 +400,8 @@ const PrinterSimulator = () => {
               cursor: (isPrinting || !selectedFile) ? 'not-allowed' : 'pointer',
               fontSize: '14px', fontWeight: 700, width: '100%',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-              background: (isPrinting || !selectedFile) ? 'rgba(99,102,241,0.2)' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              color: (isPrinting || !selectedFile) ? '#666' : '#fff',
+              background: (isPrinting || !selectedFile) ? (isDark ? 'rgba(99,102,241,0.2)' : '#e5e7eb') : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              color: (isPrinting || !selectedFile) ? (isDark ? '#666' : '#9ca3af') : '#fff',
               boxShadow: (isPrinting || !selectedFile) ? 'none' : '0 4px 20px rgba(99,102,241,0.3)',
             }}
           >
@@ -196,13 +417,13 @@ const PrinterSimulator = () => {
           {/* Queued Jobs */}
           <Section title={`Queue (${printerQueue.length})`}>
             {printerQueue.length === 0 ? (
-              <div style={{ fontSize: '12px', color: '#666', padding: '4px 0' }}>No documents waiting.</div>
+              <div style={{ fontSize: '12px', color: isDark ? '#666' : '#64748b', padding: '4px 0' }}>No documents waiting.</div>
             ) : (
               printerQueue.map(doc => (
-                <div key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                <div key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', padding: '6px 0', borderBottom: isDark ? '1px solid rgba(255,255,255,0.04)' : '1px solid #e5e7eb' }}>
                   <Printer size={13} color="#a78bfa" />
-                  <span style={{ flex: 1, color: '#ddd', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.name}</span>
-                  <span style={{ color: '#666', flexShrink: 0 }}>{doc.addedAt}</span>
+                  <span style={{ flex: 1, color: isDark ? '#ddd' : '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.name}</span>
+                  <span style={{ color: isDark ? '#666' : '#64748b', flexShrink: 0 }}>{doc.addedAt}</span>
                 </div>
               ))
             )}
@@ -211,13 +432,13 @@ const PrinterSimulator = () => {
           {/* Recent Prints */}
           {printHistory.length > 0 && (
             <Section title={`Recent Prints (${printHistory.length})`} extra={
-              <button onClick={clearPrintHistory} style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '10px' }}>Clear</button>
+              <button onClick={clearPrintHistory} style={{ background: 'none', border: 'none', color: isDark ? '#666' : '#64748b', cursor: 'pointer', fontSize: '10px' }}>Clear</button>
             }>
               {printHistory.slice(0, 5).map(doc => (
-                <div key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                <div key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', padding: '4px 0', borderBottom: isDark ? '1px solid rgba(255,255,255,0.03)' : '1px solid #e5e7eb' }}>
                   <CheckCircle size={12} color="#10b981" />
-                  <span style={{ flex: 1, color: '#ccc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.name}</span>
-                  <span style={{ color: '#555', flexShrink: 0 }}>{doc.completedAt}</span>
+                  <span style={{ flex: 1, color: isDark ? '#ccc' : '#4b5563', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.name}</span>
+                  <span style={{ color: isDark ? '#555' : '#9ca3af', flexShrink: 0 }}>{doc.completedAt}</span>
                 </div>
               ))}
             </Section>
@@ -228,9 +449,9 @@ const PrinterSimulator = () => {
       {/* ===== RIGHT: Print Preview ===== */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Preview Header */}
-        <div style={{ padding: '10px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-          <span style={{ fontSize: '14px', fontWeight: 600, color: '#fff' }}>Print Preview</span>
-          <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: '#888' }}>
+        <div style={{ padding: '10px 20px', borderBottom: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, background: isDark ? '#1a1a2e' : '#fff' }}>
+          <span style={{ fontSize: '14px', fontWeight: 600, color: isDark ? '#fff' : '#000' }}>Print Preview</span>
+          <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: isDark ? '#888' : '#64748b' }}>
             <span>{PAPER_SIZES[paperSize].name}</span>
             <span>{orientation === 'portrait' ? 'Portrait' : 'Landscape'}</span>
             <span>{copies} {copies > 1 ? 'copies' : 'copy'}</span>
@@ -238,11 +459,13 @@ const PrinterSimulator = () => {
         </div>
 
         {/* Paper Preview */}
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.15)', padding: '20px', overflow: 'auto' }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isDark ? 'rgba(0,0,0,0.15)' : '#e2e8f0', padding: '20px', overflow: 'auto' }}>
           <div style={{
             width: `${previewW}px`, height: `${previewH}px`,
             background: '#fff', borderRadius: '3px', position: 'relative',
-            boxShadow: '0 8px 40px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3)',
+            boxShadow: isDark 
+              ? '0 8px 40px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3)' 
+              : '0 8px 30px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06)',
             transition: 'width 0.4s, height 0.4s',
           }}>
             {/* Paper content */}
@@ -295,7 +518,7 @@ const PrinterSimulator = () => {
         </div>
 
         {/* Status Bar */}
-        <div style={{ padding: '8px 20px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px', color: '#888', flexShrink: 0 }}>
+        <div style={{ padding: '8px 20px', borderTop: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px', color: isDark ? '#888' : '#4b5563', flexShrink: 0, background: isDark ? '#1a1a2e' : '#fff' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <div style={{
               width: '8px', height: '8px', borderRadius: '50%',
@@ -305,7 +528,7 @@ const PrinterSimulator = () => {
             <span>{isPrinting ? `Printing — ${printPhase}` : 'Printer Ready'}</span>
           </div>
           {isPrinting && (
-            <div style={{ flex: 1, maxWidth: '200px', height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+            <div style={{ flex: 1, maxWidth: '200px', height: '4px', borderRadius: '2px', background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)', overflow: 'hidden' }}>
               <div style={{ width: `${printProgress}%`, height: '100%', borderRadius: '2px', background: 'linear-gradient(90deg, #6366f1, #a78bfa)', transition: 'width 0.08s linear' }} />
             </div>
           )}
@@ -320,46 +543,6 @@ const PrinterSimulator = () => {
       `}</style>
     </div>
   );
-};
-
-// --- Helper Components ---
-const Section = ({ title, extra, children }) => (
-  <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-    <div style={{ padding: '8px 12px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#888', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <span>{title}</span>
-      {extra}
-    </div>
-    <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      {children}
-    </div>
-  </div>
-);
-
-const Label = ({ children }) => (
-  <span style={{ fontSize: '11px', color: '#aaa', display: 'block' }}>{children}</span>
-);
-
-const ToggleBtn = ({ active, onClick, children }) => (
-  <button onClick={onClick} style={{
-    flex: 1, padding: '7px', border: 'none', cursor: 'pointer',
-    fontSize: '12px', fontWeight: 600, textAlign: 'center',
-    background: active ? 'rgba(99,102,241,0.3)' : 'rgba(0,0,0,0.2)',
-    color: active ? '#a5b4fc' : '#888', transition: 'all 0.2s'
-  }}>
-    {children}
-  </button>
-);
-
-const selectStyle = {
-  width: '100%', padding: '7px 10px', borderRadius: '6px',
-  border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.3)',
-  color: '#fff', fontSize: '13px', outline: 'none', cursor: 'pointer'
-};
-
-const counterBtn = {
-  width: '28px', height: '28px', borderRadius: '6px', border: 'none',
-  background: 'rgba(255,255,255,0.08)', color: '#fff', cursor: 'pointer',
-  display: 'flex', alignItems: 'center', justifyContent: 'center'
 };
 
 export default PrinterSimulator;

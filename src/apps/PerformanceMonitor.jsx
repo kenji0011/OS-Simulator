@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Cpu, MemoryStick, HardDrive, Wifi, Monitor } from 'lucide-react';
+import { useOS } from '../context/OSContext';
 
 const MAX_POINTS = 60;
 
 const generateRandom = (min, max) => Math.random() * (max - min) + min;
 
 const PerformanceMonitor = () => {
+  const { theme } = useOS();
   const [activeTab, setActiveTab] = useState('cpu');
   const [cpuHistory, setCpuHistory] = useState(Array(MAX_POINTS).fill(0));
   const [memHistory, setMemHistory] = useState(Array(MAX_POINTS).fill(0));
@@ -17,6 +19,7 @@ const PerformanceMonitor = () => {
   const [uptime, setUptime] = useState(0);
 
   const uptimeRef = useRef(0);
+  const isDark = theme === 'dark';
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -71,7 +74,7 @@ const PerformanceMonitor = () => {
         {/* Grid lines */}
         {[0, 25, 50, 75, 100].map(v => (
           <line key={v} x1="0" y1={height - (v / 100) * height} x2={width} y2={height - (v / 100) * height}
-            stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+            stroke={isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'} strokeWidth="1" />
         ))}
         {/* Filled area */}
         <polygon points={areaPoints} fill={`url(#${gradientId})`} />
@@ -90,10 +93,10 @@ const PerformanceMonitor = () => {
 
   const getActiveData = () => {
     switch (activeTab) {
-      case 'cpu': return { data: cpuHistory, color: '#c471ed', gradId: 'cpuGrad', title: 'CPU', subtitle: 'AMD Ryzen 5 5600X 6-Core Processor', label: '% Utilization' };
-      case 'memory': return { data: memHistory, color: '#ec4899', gradId: 'memGrad', title: 'Memory', subtitle: '15.9 GB DDR4', label: '% In Use' };
-      case 'disk': return { data: diskHistory, color: '#a78bfa', gradId: 'diskGrad', title: 'Disk 0 (C:)', subtitle: 'Crucial SSD 480GB', label: '% Active Time' };
-      case 'network': return { data: Array(MAX_POINTS).fill(0), color: '#60a5fa', gradId: 'netGrad', title: 'Ethernet', subtitle: 'Radmin VPN', label: 'Throughput' };
+      case 'cpu': return { data: cpuHistory, color: '#c471ed', gradId: 'cpuGrad', title: 'CPU', subtitle: 'AMD Ryzen 9 7900X 12-Core Processor', label: '% Utilization' };
+      case 'memory': return { data: memHistory, color: '#ec4899', gradId: 'memGrad', title: 'Memory', subtitle: '32.0 GB DDR5', label: '% In Use' };
+      case 'disk': return { data: diskHistory, color: '#a78bfa', gradId: 'diskGrad', title: 'Disk 0 (C:)', subtitle: 'NVMe Gen4 SSD 1TB', label: '% Active Time' };
+      case 'network': return { data: Array(MAX_POINTS).fill(0), color: '#60a5fa', gradId: 'netGrad', title: 'Ethernet', subtitle: 'Realtek PCIe 2.5GbE Controller', label: 'Throughput' };
       default: return { data: cpuHistory, color: '#c471ed', gradId: 'cpuGrad', title: 'CPU', subtitle: '', label: '% Utilization' };
     }
   };
@@ -101,41 +104,41 @@ const PerformanceMonitor = () => {
   const active = getActiveData();
 
   const styles = {
-    container: { height: '100%', display: 'flex', background: '#1a1a2e', color: '#e0e0e0', fontFamily: 'Inter, sans-serif', overflow: 'hidden' },
-    iconSidebar: { width: '48px', background: 'rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '12px', gap: '6px', borderRight: '1px solid rgba(255,255,255,0.06)' },
-    iconBtn: (isActive) => ({ width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px', border: 'none', cursor: 'pointer', background: isActive ? 'rgba(196,113,237,0.25)' : 'transparent', color: isActive ? '#c471ed' : '#888' }),
-    sidebar: { width: '200px', background: 'rgba(0,0,0,0.2)', borderRight: '1px solid rgba(255,255,255,0.06)', overflowY: 'auto', padding: '8px 0' },
-    sideItem: (isActive) => ({ padding: '14px 16px', cursor: 'pointer', display: 'flex', gap: '12px', alignItems: 'center', background: isActive ? 'rgba(196,113,237,0.15)' : 'transparent', borderLeft: isActive ? '3px solid #c471ed' : '3px solid transparent', transition: 'all 0.2s' }),
+    container: { height: '100%', display: 'flex', background: isDark ? '#1a1a2e' : '#f3f4f6', color: isDark ? '#e0e0e0' : '#1e293b', fontFamily: 'Inter, sans-serif', overflow: 'hidden' },
+    iconSidebar: { width: '48px', background: isDark ? 'rgba(0,0,0,0.3)' : '#e5e7eb', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '12px', gap: '6px', borderRight: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid #d1d5db' },
+    iconBtn: (isActive) => ({ width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px', border: 'none', cursor: 'pointer', background: isActive ? (isDark ? 'rgba(196,113,237,0.25)' : 'rgba(196,113,237,0.15)') : 'transparent', color: isActive ? '#c471ed' : (isDark ? '#888' : '#64748b') }),
+    sidebar: { width: '200px', background: isDark ? 'rgba(0,0,0,0.2)' : '#fff', borderRight: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid #e5e7eb', overflowY: 'auto', padding: '8px 0' },
+    sideItem: (isActive) => ({ padding: '14px 16px', cursor: 'pointer', display: 'flex', gap: '12px', alignItems: 'center', background: isActive ? (isDark ? 'rgba(196,113,237,0.15)' : 'rgba(196,113,237,0.08)') : 'transparent', borderLeft: isActive ? '3px solid #c471ed' : '3px solid transparent', transition: 'all 0.2s' }),
     main: { flex: 1, display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto' },
-    chartBox: { background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)', padding: '16px', marginBottom: '24px' },
-    statsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 48px', fontSize: '13px' },
-    statLabel: { color: '#888' },
-    statValue: { color: '#e0e0e0', textAlign: 'right' },
+    chartBox: { background: isDark ? 'rgba(0,0,0,0.3)' : '#fff', borderRadius: '8px', border: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid #e5e7eb', padding: '16px', marginBottom: '24px', boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)' },
+    statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(185px, 1fr))', gap: '16px 40px', fontSize: '13px' },
+    statLabel: { color: isDark ? '#888' : '#64748b' },
+    statValue: { color: isDark ? '#e0e0e0' : '#1e293b', textAlign: 'right', fontWeight: 600 },
   };
 
   const cpuStats = [
-    ['Utilization', `${cpuUtil.toFixed(0)}%`], ['Speed', '3.54 GHz'],
+    ['Utilization', `${cpuUtil.toFixed(0)}%`], ['Speed', '4.70 GHz'],
     ['Processes', '309'], ['Threads', '4901'],
     ['Handles', '1934631'], ['Up time', formatUptime(uptime)],
-    ['Base speed', '3.70 GHz'], ['Sockets', '1'],
-    ['Cores', '6'], ['Logical processors', '12'],
-    ['Virtualization', 'Enabled'], ['L1 cache', '384 KB'],
-    ['L2 cache', '3.0 MB'], ['L3 cache', '32.0 MB'],
+    ['Base speed', '4.70 GHz'], ['Sockets', '1'],
+    ['Cores', '12'], ['Logical processors', '24'],
+    ['Virtualization', 'Enabled'], ['L1 cache', '768 KB'],
+    ['L2 cache', '12.0 MB'], ['L3 cache', '64.0 MB'],
   ];
 
   const memStats = [
-    ['In use', `${memUsed.toFixed(1)} GB`], ['Available', `${(15.9 - memUsed).toFixed(1)} GB`],
-    ['Committed', '13.2/18.4 GB'], ['Cached', '4.8 GB'],
-    ['Paged pool', '621 MB'], ['Non-paged pool', '352 MB'],
-    ['Speed', '3200 MHz'], ['Slots used', '2 of 4'],
-    ['Form factor', 'DIMM'], ['Hardware reserved', '72.3 MB'],
+    ['In use', `${(memUsed * 2).toFixed(1)} GB`], ['Available', `${(32.0 - memUsed * 2).toFixed(1)} GB`],
+    ['Committed', '26.4/36.8 GB'], ['Cached', '9.6 GB'],
+    ['Paged pool', '1.2 GB'], ['Non-paged pool', '704 MB'],
+    ['Speed', '5200 MHz'], ['Slots used', '2 of 4'],
+    ['Form factor', 'UDIMM'], ['Hardware reserved', '144.6 MB'],
   ];
 
   const diskStats = [
-    ['Active time', `${diskActive.toFixed(0)}%`], ['Average response time', `${generateRandom(0.5, 3).toFixed(1)} ms`],
-    ['Read speed', `${(diskActive * 2.1).toFixed(0)} KB/s`], ['Write speed', `${(diskActive * 1.4).toFixed(0)} KB/s`],
-    ['Capacity', '480 GB'], ['Formatted', '447 GB'],
-    ['System disk', 'Yes'], ['Type', 'SSD'],
+    ['Active time', `${diskActive.toFixed(0)}%`], ['Average response time', `${generateRandom(0.1, 1.5).toFixed(1)} ms`],
+    ['Read speed', `${(diskActive * 8.4).toFixed(0)} KB/s`], ['Write speed', `${(diskActive * 5.6).toFixed(0)} KB/s`],
+    ['Capacity', '1024 GB'], ['Formatted', '953 GB'],
+    ['System disk', 'Yes'], ['Type', 'SSD (NVMe)'],
   ];
 
   const getStatsForTab = () => {
@@ -149,7 +152,6 @@ const PerformanceMonitor = () => {
 
   const miniChart = (data, color) => {
     const w = 60; const h = 24;
-    const step = w / (data.length - 1);
     const pts = data.slice(-20).map((v, i) => `${i * (w / 19)},${h - (v / 100) * h}`).join(' ');
     return (
       <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '60px', height: '24px' }}>
@@ -167,20 +169,20 @@ const PerformanceMonitor = () => {
 
       {/* Hardware Sidebar */}
       <div style={styles.sidebar}>
-        <div style={{ padding: '8px 16px 16px', fontSize: '15px', fontWeight: 600, color: '#fff' }}>Performance</div>
+        <div style={{ padding: '8px 16px 16px', fontSize: '15px', fontWeight: 600, color: isDark ? '#fff' : '#000' }}>Performance</div>
         {tabs.map(tab => (
           <div key={tab.id} style={styles.sideItem(activeTab === tab.id)} onClick={() => setActiveTab(tab.id)}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <tab.icon size={16} color={activeTab === tab.id ? '#c471ed' : '#888'} />
-                <span style={{ fontSize: '13px', fontWeight: 500 }}>{tab.label}</span>
+                <tab.icon size={16} color={activeTab === tab.id ? '#c471ed' : (isDark ? '#888' : '#64748b')} />
+                <span style={{ fontSize: '13px', fontWeight: 500, color: activeTab === tab.id ? (isDark ? '#fff' : '#000') : (isDark ? '#bbb' : '#475569') }}>{tab.label}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 {miniChart(
                   tab.id === 'cpu' ? cpuHistory : tab.id === 'memory' ? memHistory : tab.id === 'disk' ? diskHistory : Array(20).fill(0),
-                  activeTab === tab.id ? '#c471ed' : '#555'
+                  activeTab === tab.id ? '#c471ed' : (isDark ? '#555' : '#cbd5e1')
                 )}
-                <span style={{ fontSize: '11px', color: '#aaa' }}>{tab.value}</span>
+                <span style={{ fontSize: '11px', color: isDark ? '#aaa' : '#64748b' }}>{tab.value}</span>
               </div>
             </div>
           </div>
@@ -191,18 +193,18 @@ const PerformanceMonitor = () => {
       <div style={styles.main}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
-          <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 600, color: '#fff' }}>{active.title}</h2>
-          <span style={{ fontSize: '13px', color: '#aaa' }}>{active.subtitle}</span>
+          <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 600, color: isDark ? '#fff' : '#000' }}>{active.title}</h2>
+          <span style={{ fontSize: '13px', color: isDark ? '#aaa' : '#64748b' }}>{active.subtitle}</span>
         </div>
 
         {/* Chart */}
         <div style={styles.chartBox}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#888', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: isDark ? '#888' : '#64748b', marginBottom: '8px' }}>
             <span>{active.label}</span>
             <span>100%</span>
           </div>
           {renderChart(active.data, active.color, active.gradId)}
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#666', marginTop: '4px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: isDark ? '#666' : '#94a3b8', marginTop: '4px' }}>
             <span>60 seconds</span>
             <span>0</span>
           </div>
@@ -211,7 +213,7 @@ const PerformanceMonitor = () => {
         {/* Stats  */}
         <div style={styles.statsGrid}>
           {getStatsForTab().map(([label, value], i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: isDark ? '1px solid rgba(255,255,255,0.04)' : '1px solid #e5e7eb' }}>
               <span style={styles.statLabel}>{label}</span>
               <span style={styles.statValue}>{value}</span>
             </div>

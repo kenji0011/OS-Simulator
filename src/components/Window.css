@@ -73,6 +73,78 @@
   left: 0 !important;
   width: 100% !important;
   height: 100% !important;
-  transform: none !important;
+  transform: translate(0px, 0px) !important;
   border-radius: 0 !important;
 }
+
+.window-container.transition-active {
+  transition: width 0.35s cubic-bezier(0.1, 0.9, 0.2, 1),
+              height 0.35s cubic-bezier(0.1, 0.9, 0.2, 1),
+              transform 0.35s cubic-bezier(0.1, 0.9, 0.2, 1),
+              top 0.35s cubic-bezier(0.1, 0.9, 0.2, 1),
+              left 0.35s cubic-bezier(0.1, 0.9, 0.2, 1),
+              opacity 0.35s cubic-bezier(0.1, 0.9, 0.2, 1),
+              scale 0.35s cubic-bezier(0.1, 0.9, 0.2, 1) !important;
+}
+
+/* ===== HARDWARE-ACCELERATED WINDOW ANIMATIONS & TRANSITIONS ===== */
+
+.window-inner {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  animation: windowOpen 0.3s cubic-bezier(0.34, 1.45, 0.64, 1) forwards;
+  scale: 1;
+  opacity: 1;
+  -webkit-font-smoothing: subpixel-antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@keyframes windowOpen {
+  from {
+    opacity: 0;
+    scale: 0.92;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+/* Dynamic smooth transitions ONLY when not actively dragging/resizing (avoids lag) */
+.window-container.allow-transitions {
+  transition: width 0.3s cubic-bezier(0.1, 0.9, 0.2, 1),
+              height 0.3s cubic-bezier(0.1, 0.9, 0.2, 1),
+              opacity 0.3s cubic-bezier(0.1, 0.9, 0.2, 1),
+              scale 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
+}
+
+/* Smooth exit closing states */
+.window-container.closing {
+  transition: none !important;
+  animation: windowClose 0.2s cubic-bezier(0.1, 0.9, 0.2, 1) forwards !important;
+  pointer-events: none !important;
+  transform-origin: center center !important;
+}
+
+@keyframes windowClose {
+  from {
+    opacity: 1;
+    scale: 1;
+  }
+  to {
+    opacity: 0;
+    scale: 0.93;
+  }
+}
+
+/* Hardware minimized state: macOS-style Genie sucking/zoom effect towards taskbar icon */
+.window-container.minimized {
+  opacity: 0 !important;
+  scale: 0.02 !important;
+  pointer-events: none !important;
+  transition: scale 0.4s cubic-bezier(0.5, 0, 0.15, 1),
+              opacity 0.3s cubic-bezier(0.5, 0, 0.15, 1) !important;
+}
+

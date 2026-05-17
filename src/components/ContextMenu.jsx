@@ -40,6 +40,10 @@ export default function ContextMenu({
   colorScheme, setColorScheme,
   wallpaper, setWallpaper,
   iconSize, setIconSize,
+  // App & item contextual properties
+  item, app,
+  onOpenItem, onOpenApp,
+  onRenameItem, onDeleteItem
 }) {
   const [submenu, setSubmenu] = useState(null); // 'iconSize' | 'wallpaper' | 'theme'
   const menuRef = useRef(null);
@@ -75,6 +79,45 @@ export default function ContextMenu({
   const handleSubmenuLeave = () => {
     submenuTimerRef.current = setTimeout(() => setSubmenu(null), 200);
   };
+
+  if (item) {
+    return (
+      <div className="ctx-menu-backdrop" onContextMenu={(e) => e.preventDefault()}>
+        <div
+          ref={menuRef}
+          className={`ctx-menu glass-panel ${theme === 'dark' ? 'ctx-dark' : ''}`}
+          style={{ left: pos.x, top: pos.y }}
+        >
+          <button className="ctx-item" onClick={() => { onOpenItem(item); onClose(); }}>
+            <span>Open</span>
+          </button>
+          <div className="ctx-separator" />
+          <button className="ctx-item" onClick={() => { onRenameItem(item); onClose(); }}>
+            <span>Rename</span>
+          </button>
+          <button className="ctx-item" onClick={() => { onDeleteItem(item); onClose(); }} style={{ color: '#ef4444' }}>
+            <span style={{ color: '#ef4444' }}>Delete</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (app) {
+    return (
+      <div className="ctx-menu-backdrop" onContextMenu={(e) => e.preventDefault()}>
+        <div
+          ref={menuRef}
+          className={`ctx-menu glass-panel ${theme === 'dark' ? 'ctx-dark' : ''}`}
+          style={{ left: pos.x, top: pos.y }}
+        >
+          <button className="ctx-item" onClick={() => { onOpenApp(app.id); onClose(); }}>
+            <span>Open {app.name}</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="ctx-menu-backdrop" onContextMenu={(e) => e.preventDefault()}>
