@@ -89,6 +89,14 @@ const DiskManagement = () => {
     }
 
     const drawGraph = () => {
+      // Auto-adjust resolution to client size to keep the line razor sharp
+      if (canvas.clientWidth && canvas.clientHeight) {
+        if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
+          canvas.width = canvas.clientWidth;
+          canvas.height = canvas.clientHeight;
+        }
+      }
+
       // Clean canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -329,7 +337,7 @@ const DiskManagement = () => {
       d.partitions.forEach(p => {
         if (p.type !== 'unallocated') {
           list.push({
-            letter: p.letter || '(No Letter)',
+            letter: p.letter ? `${p.letter}:` : '',
             label: p.label || 'System',
             type: 'Simple',
             fileSystem: p.fs || 'NTFS',
@@ -348,8 +356,47 @@ const DiskManagement = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', color: theme === 'dark' ? '#f3f4f6' : '#1f2937', fontFamily: 'inherit', overflow: 'hidden' }}>
       
+      {/* Dynamic Hover & Premium UI Styles */}
+      <style>{`
+        .disk-action-btn {
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+        .disk-action-btn:hover:not(:disabled) {
+          filter: brightness(1.12) !important;
+          transform: translateY(-1px) !important;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+        }
+        .disk-action-btn:active:not(:disabled) {
+          transform: translateY(0px) !important;
+          filter: brightness(0.95) !important;
+        }
+        .disk-action-btn-danger:hover:not(:disabled) {
+          background-color: rgba(239, 68, 68, 0.15) !important;
+          border-color: rgba(239, 68, 68, 0.6) !important;
+          color: #ef4444 !important;
+        }
+        .disk-action-btn-primary:hover:not(:disabled) {
+          box-shadow: 0 4px 10px rgba(168, 85, 247, 0.4) !important;
+          background-color: #b56bf8 !important;
+        }
+        .disk-table-row {
+          transition: background 0.15s ease !important;
+          cursor: pointer !important;
+        }
+        .disk-table-row:hover {
+          background-color: ${theme === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)'} !important;
+        }
+        .disk-partition-block {
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+        .disk-partition-block:hover {
+          filter: brightness(1.08) !important;
+          background-color: ${theme === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)'} !important;
+        }
+      `}</style>
+
       {/* 1. Header Toolbar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: theme === 'dark' ? 'rgba(30, 41, 59, 0.4)' : 'rgba(243, 244, 246, 0.8)', borderBottom: theme === 'dark' ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.08)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: theme === 'dark' ? 'rgba(30, 41, 59, 0.4)' : 'rgba(243, 244, 246, 0.8)', borderBottom: theme === 'dark' ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.08)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <HardDrive size={18} color="#a855f7" />
           <span style={{ fontWeight: 600, fontSize: '13px' }}>Virtual Disk Manager (DiskMgmt.msc)</span>
@@ -361,7 +408,8 @@ const DiskManagement = () => {
               // baseline reset load
               dataPoints.current = [];
             }}
-            style={{ display: 'flex', alignItems: 'center', gap: '4px', background: theme === 'dark' ? 'rgba(255,255,255,0.06)' : '#fff', border: theme === 'dark' ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.15)', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', color: 'inherit', cursor: 'pointer', transition: 'all 0.2s' }}
+            className="disk-action-btn"
+            style={{ display: 'flex', alignItems: 'center', gap: '4px', background: theme === 'dark' ? 'rgba(255,255,255,0.06)' : '#fff', border: theme === 'dark' ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.15)', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', color: 'inherit', cursor: 'pointer' }}
           >
             <RefreshCw size={12} />
             <span>Refresh Disks</span>
@@ -369,47 +417,81 @@ const DiskManagement = () => {
         </div>
       </div>
 
-      <div style={{ display: 'flex', flex: 1, flexDirection: 'column', overflowY: 'auto', padding: '16px', gap: '16px' }}>
+      <div style={{ display: 'flex', flex: 1, flexDirection: 'column', overflowY: 'auto', padding: '16px', gap: '16px', minHeight: 0 }}>
         
         {/* 2. Top Section: Volumes list table */}
-        <div className="glass-panel" style={{ borderRadius: '8px', border: theme === 'dark' ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.08)', overflow: 'hidden' }}>
-          <div style={{ padding: '8px 12px', background: theme === 'dark' ? 'rgba(30,41,59,0.3)' : 'rgba(243,244,246,0.5)', borderBottom: theme === 'dark' ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.08)', fontWeight: 600, fontSize: '12px' }}>
+        <div className="glass-panel" style={{ 
+          borderRadius: '8px', 
+          border: theme === 'dark' ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.08)', 
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          flex: '1 1 180px',
+          minHeight: '180px'
+        }}>
+          <div style={{ padding: '8px 12px', background: theme === 'dark' ? 'rgba(30,41,59,0.3)' : 'rgba(243,244,246,0.5)', borderBottom: theme === 'dark' ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.08)', fontWeight: 600, fontSize: '12px', flexShrink: 0 }}>
             Volume List
           </div>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+          <div style={{ overflowX: 'auto', overflowY: 'auto', flex: 1 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', minWidth: '700px' }}>
               <thead>
-                <tr style={{ background: theme === 'dark' ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.02)', borderBottom: theme === 'dark' ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.06)' }}>
-                  <th style={{ padding: '8px 12px' }}>Volume</th>
-                  <th style={{ padding: '8px 12px' }}>Disk</th>
-                  <th style={{ padding: '8px 12px' }}>Layout</th>
-                  <th style={{ padding: '8px 12px' }}>File System</th>
-                  <th style={{ padding: '8px 12px' }}>Status</th>
-                  <th style={{ padding: '8px 12px' }}>Capacity</th>
-                  <th style={{ padding: '8px 12px' }}>Free Space</th>
-                  <th style={{ padding: '8px 12px' }}>% Free</th>
+                <tr style={{ background: theme === 'dark' ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.02)', borderBottom: theme === 'dark' ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.06)', position: 'sticky', top: 0, zIndex: 1 }}>
+                  <th style={{ padding: '8px 12px', background: theme === 'dark' ? '#181824' : '#f9fafb' }}>Volume</th>
+                  <th style={{ padding: '8px 12px', background: theme === 'dark' ? '#181824' : '#f9fafb' }}>Disk</th>
+                  <th style={{ padding: '8px 12px', background: theme === 'dark' ? '#181824' : '#f9fafb' }}>Layout</th>
+                  <th style={{ padding: '8px 12px', background: theme === 'dark' ? '#181824' : '#f9fafb' }}>File System</th>
+                  <th style={{ padding: '8px 12px', background: theme === 'dark' ? '#181824' : '#f9fafb' }}>Status</th>
+                  <th style={{ padding: '8px 12px', background: theme === 'dark' ? '#181824' : '#f9fafb' }}>Capacity</th>
+                  <th style={{ padding: '8px 12px', background: theme === 'dark' ? '#181824' : '#f9fafb' }}>Free Space</th>
+                  <th style={{ padding: '8px 12px', background: theme === 'dark' ? '#181824' : '#f9fafb' }}>% Free</th>
                 </tr>
               </thead>
               <tbody>
-                {volumeRows.map((vol, index) => (
-                  <tr key={index} style={{ borderBottom: theme === 'dark' ? '1px solid rgba(255,255,255,0.03)' : '1px solid rgba(0,0,0,0.04)', background: selectedPartition && selectedPartition.letter === vol.letter ? 'rgba(168, 85, 247, 0.08)' : 'transparent' }}>
-                    <td style={{ padding: '8px 12px', fontWeight: 600 }}>{vol.label} ({vol.letter})</td>
-                    <td style={{ padding: '8px 12px', color: theme === 'dark' ? '#9ca3af' : '#6b7280' }}>{vol.diskName}</td>
-                    <td style={{ padding: '8px 12px' }}>{vol.type}</td>
-                    <td style={{ padding: '8px 12px' }}>{vol.fileSystem}</td>
-                    <td style={{ padding: '8px 12px', color: '#10b981' }}>{vol.status}</td>
-                    <td style={{ padding: '8px 12px' }}>{vol.capacity}</td>
-                    <td style={{ padding: '8px 12px' }}>{vol.freeSpace}</td>
-                    <td style={{ padding: '8px 12px' }}>{vol.freePct}</td>
-                  </tr>
-                ))}
+                {volumeRows.map((vol, index) => {
+                  const cleanLetter = vol.letter ? vol.letter.replace(':', '') : '';
+                  const isSelected = selectedPartition && (selectedPartition.letter ? selectedPartition.letter === cleanLetter : selectedPartition.label === vol.label);
+                  return (
+                    <tr 
+                      key={index} 
+                      className="disk-table-row"
+                      onClick={() => {
+                        const diskIdx = disks.findIndex(d => d.name === vol.diskName);
+                        if (diskIdx !== -1) {
+                          const partIdx = disks[diskIdx].partitions.findIndex(p => {
+                            if (cleanLetter) {
+                              return p.letter === cleanLetter;
+                            } else {
+                              return p.label === vol.label;
+                            }
+                          });
+                          if (partIdx !== -1) {
+                            setSelectedPartition({ ...disks[diskIdx].partitions[partIdx], path: [diskIdx, partIdx] });
+                          }
+                        }
+                      }}
+                      style={{ 
+                        borderBottom: theme === 'dark' ? '1px solid rgba(255,255,255,0.03)' : '1px solid rgba(0,0,0,0.04)', 
+                        background: isSelected ? 'rgba(168, 85, 247, 0.08)' : 'transparent' 
+                      }}
+                    >
+                      <td style={{ padding: '8px 12px', fontWeight: 600 }}>{vol.label}{vol.letter ? ` (${vol.letter})` : ''}</td>
+                      <td style={{ padding: '8px 12px', color: theme === 'dark' ? '#9ca3af' : '#6b7280' }}>{vol.diskName}</td>
+                      <td style={{ padding: '8px 12px' }}>{vol.type}</td>
+                      <td style={{ padding: '8px 12px' }}>{vol.fileSystem}</td>
+                      <td style={{ padding: '8px 12px', color: '#10b981' }}>{vol.status}</td>
+                      <td style={{ padding: '8px 12px' }}>{vol.capacity}</td>
+                      <td style={{ padding: '8px 12px' }}>{vol.freeSpace}</td>
+                      <td style={{ padding: '8px 12px' }}>{vol.freePct}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </div>
 
         {/* 3. Middle Section: Disk partition graphical viewer */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flexShrink: 0 }}>
           {disks.map((disk, diskIdx) => (
             <div key={disk.id} className="glass-panel" style={{ borderRadius: '8px', border: theme === 'dark' ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.08)', display: 'flex', height: '90px', overflow: 'hidden' }}>
               
@@ -430,6 +512,7 @@ const DiskManagement = () => {
                     <div
                       key={part.id}
                       onClick={() => setSelectedPartition({ ...part, path: [diskIdx, partIdx] })}
+                      className="disk-partition-block"
                       style={{
                         width: `${percentWidth}%`,
                         minWidth: '50px',
@@ -482,7 +565,7 @@ const DiskManagement = () => {
         </div>
 
         {/* 4. Action Panel & Dynamic Performance Graph */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', flexShrink: 0 }}>
           
           {/* Action Operations Controller */}
           <div className="glass-panel" style={{ borderRadius: '8px', border: theme === 'dark' ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.08)', padding: '14px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -512,6 +595,7 @@ const DiskManagement = () => {
                         setNewVolumeLabel('New Volume');
                         setShowCreateModal(true);
                       }}
+                      className="disk-action-btn disk-action-btn-primary"
                       style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: '#a855f7', border: 'none', borderRadius: '4px', color: '#fff', padding: '6px 12px', fontSize: '11px', cursor: 'pointer', fontWeight: 500 }}
                     >
                       <Plus size={12} />
@@ -524,6 +608,7 @@ const DiskManagement = () => {
                           setFormatLabel(selectedPartition.label);
                           setShowFormatModal(true);
                         }}
+                        className="disk-action-btn"
                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: theme === 'dark' ? 'rgba(255,255,255,0.06)' : '#f3f4f6', border: theme === 'dark' ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.15)', borderRadius: '4px', color: 'inherit', padding: '6px 12px', fontSize: '11px', cursor: 'pointer' }}
                       >
                         <RefreshCw size={12} />
@@ -541,6 +626,7 @@ const DiskManagement = () => {
                             alert("No unallocated space directly to the right of this partition.");
                           }
                         }}
+                        className="disk-action-btn"
                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: theme === 'dark' ? 'rgba(255,255,255,0.06)' : '#f3f4f6', border: theme === 'dark' ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.15)', borderRadius: '4px', color: 'inherit', padding: '6px 12px', fontSize: '11px', cursor: 'pointer' }}
                       >
                         <span>Extend Volume...</span>
@@ -550,6 +636,7 @@ const DiskManagement = () => {
                           setShrinkAmount(Math.floor(selectedPartition.size / 3));
                           setShowShrinkModal(true);
                         }}
+                        className="disk-action-btn"
                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: theme === 'dark' ? 'rgba(255,255,255,0.06)' : '#f3f4f6', border: theme === 'dark' ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.15)', borderRadius: '4px', color: 'inherit', padding: '6px 12px', fontSize: '11px', cursor: 'pointer' }}
                       >
                         <span>Shrink Volume...</span>
@@ -557,6 +644,7 @@ const DiskManagement = () => {
                       <button 
                         onClick={handleDeletePartition}
                         disabled={selectedPartition.label === 'System Reserved' || selectedPartition.letter === 'C'}
+                        className="disk-action-btn disk-action-btn-danger"
                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: '4px', color: '#ef4444', padding: '6px 12px', fontSize: '11px', cursor: (selectedPartition.label === 'System Reserved' || selectedPartition.letter === 'C') ? 'not-allowed' : 'pointer', opacity: (selectedPartition.label === 'System Reserved' || selectedPartition.letter === 'C') ? 0.4 : 1 }}
                       >
                         <Trash2 size={12} />
